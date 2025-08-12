@@ -451,6 +451,8 @@ class PetController {
                 }
 
                 // Purchase pet atomically
+                console.log(`💳 Before purchase: User ${userId} balance = ${user.balance}, pet cost = ${pet.base_price}`);
+
                 await this.db.run(
                     'UPDATE users SET balance = balance - ? WHERE id = ?',
                     [pet.base_price, userId]
@@ -467,7 +469,10 @@ class PetController {
                     [userId, 'pet', -pet.base_price, `Покупка питомца: ${pet.name}`]
                 );
 
+                // Verify the transaction worked
+                const updatedUser = await this.db.get('SELECT balance FROM users WHERE id = ?', [userId]);
                 console.log(`✅ Pet purchased successfully: User ${userId} bought pet ${petId} (${pet.name}) for ${pet.base_price} stars`);
+                console.log(`💰 Transaction verified: Previous balance: ${user.balance}, Cost: ${pet.base_price}, Final balance: ${updatedUser.balance}`);
 
                 return {
                     success: true,
@@ -634,7 +639,7 @@ class PetController {
             const successMsg = `⬆️ Питомец улучшен!
 
 🐾 ${userPet.name} теперь ${newLevel} уровня!
-💰 Потрачено: ${upgradeCost} ⭐
+💰 Потрач��но: ${upgradeCost} ⭐
 💎 Остаток: ${(user.balance - upgradeCost).toFixed(2)} ⭐
 
 📈 Новый буст: +${newBoost}%

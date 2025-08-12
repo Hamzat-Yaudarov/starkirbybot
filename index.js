@@ -329,12 +329,32 @@ bot.on('message', async (msg) => {
     }
 });
 
+// Callback deduplication tracking
+const processedCallbacks = new Set();
+
 // Handle callback queries
 bot.on('callback_query', async (callbackQuery) => {
     const msg = callbackQuery.message;
     const data = callbackQuery.data;
     const chatId = msg.chat.id;
     const userId = callbackQuery.from.id;
+
+    // Create unique callback ID to prevent duplicate processing
+    const callbackId = `${callbackQuery.id}_${userId}_${data}`;
+
+    // Check if this callback is already being processed
+    if (processedCallbacks.has(callbackId)) {
+        console.log(`⚠️ Duplicate callback detected, skipping: ${callbackId}`);
+        return;
+    }
+
+    // Mark callback as being processed
+    processedCallbacks.add(callbackId);
+
+    // Clean up old processed callbacks after 10 seconds
+    setTimeout(() => {
+        processedCallbacks.delete(callbackId);
+    }, 10000);
 
     try {
         if (data.startsWith('task_')) {
@@ -382,7 +402,7 @@ bot.on('callback_query', async (callbackQuery) => {
                     await bot.answerCallbackQuery(callbackQuery.id, '❌ Вы еще не подписались на все каналы', true);
                     return;
                 } else {
-                    await bot.answerCallbackQuery(callbackQuery.id, '✅ Подписки проверены!', true);
+                    await bot.answerCallbackQuery(callbackQuery.id, '✅ П��дписки проверены!', true);
 
                     // Process delayed referral rewards when user successfully subscribes
                     await userController.processDelayedReferralRewards(userId);

@@ -321,7 +321,7 @@ class UserController {
 
             await this.db.run(
                 'UPDATE users SET level1_referrals = ?, level2_referrals = ? WHERE id = ?',
-                [level1Count.count, level2Count.count, userId]
+                [level1Count.count || 0, level2Count.count || 0, userId]
             );
         } catch (error) {
             console.error('Error updating referral counts:', error);
@@ -427,7 +427,7 @@ ${petsInfo}${boostInfo}
                         { text: '⭐ Пригласить друзей', callback_data: 'menu_referral' }
                     ],
                     [
-                        { text: '🐾 Питомцы', callback_data: 'menu_pets' },
+                        { text: '🐾 Пито��цы', callback_data: 'menu_pets' },
                         { text: '📋 Задания', callback_data: 'menu_tasks' }
                     ],
                     [
