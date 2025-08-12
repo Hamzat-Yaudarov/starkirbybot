@@ -358,6 +358,67 @@ class Database {
         }
     }
 
+    // Begin transaction
+    async beginTransaction() {
+        try {
+            this.db.exec('BEGIN TRANSACTION');
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    }
+
+    // Commit transaction
+    async commitTransaction() {
+        try {
+            this.db.exec('COMMIT');
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    }
+
+    // Rollback transaction
+    async rollbackTransaction() {
+        try {
+            this.db.exec('ROLLBACK');
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    }
+
+    // Execute multiple operations in a transaction
+    async transaction(operations) {
+        try {
+            await this.beginTransaction();
+
+            const results = [];
+            for (const operation of operations) {
+                if (operation.type === 'run') {
+                    const result = await this.run(operation.query, operation.params);
+                    results.push(result);
+                } else if (operation.type === 'get') {
+                    const result = await this.get(operation.query, operation.params);
+                    results.push(result);
+                } else if (operation.type === 'all') {
+                    const result = await this.all(operation.query, operation.params);
+                    results.push(result);
+                }
+            }
+
+            await this.commitTransaction();
+            return Promise.resolve(results);
+        } catch (error) {
+            try {
+                await this.rollbackTransaction();
+            } catch (rollbackError) {
+                console.error('Error during rollback:', rollbackError);
+            }
+            return Promise.reject(error);
+        }
+    }
+
     close() {
         try {
             this.db.close();

@@ -228,7 +228,7 @@ class PetController {
             console.error('Error showing pet shop:', error);
             if (messageId) {
                 try {
-                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при загрузке магазина', {
+                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при загруз��е магазина', {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -312,7 +312,7 @@ class PetController {
                     const canAfford = user.balance >= upgradeCost;
                     const buttonText = canAfford ?
                         `⬆️ ${pet.name} до ур.${pet.level + 1} (${upgradeCost} ⭐)` :
-                        `❌ ${pet.name} (${upgradeCost} ⭐)`;
+                        `❌ ${pet.name} (${upgradeCost} ��)`;
                     
                     keyboard.push([{ 
                         text: buttonText, 
@@ -348,7 +348,7 @@ class PetController {
             console.error('Error showing pet upgrade:', error);
             if (messageId) {
                 try {
-                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при загрузке улучшений', {
+                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка п��и загрузке улучшений', {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -425,60 +425,57 @@ class PetController {
                 await this.initCoordinator();
             }
 
-            // Use locked transaction to prevent race conditions
+            // Use database transaction to ensure data consistency
             const result = await this.coordinator.lockedTransaction(lockKey, async () => {
-                // Re-fetch user and pet data inside transaction
-                const user = await this.db.get('SELECT balance FROM users WHERE id = ?', [userId]);
-                const pet = await this.db.get('SELECT * FROM pets WHERE id = ?', [petId]);
+                // Use database transaction for atomic operations
+                const operations = [
+                    // Get user data
+                    { type: 'get', query: 'SELECT balance FROM users WHERE id = ?', params: [userId] },
+                    // Get pet data
+                    { type: 'get', query: 'SELECT * FROM pets WHERE id = ?', params: [petId] },
+                    // Check existing pet
+                    { type: 'get', query: 'SELECT id FROM user_pets WHERE user_id = ? AND pet_id = ?', params: [userId, petId] }
+                ];
+
+                const transactionResults = await this.db.transaction(operations);
+                const user = transactionResults[0];
+                const pet = transactionResults[1];
+                const existingPet = transactionResults[2];
 
                 if (!user || !pet) {
                     throw new Error('USER_OR_PET_NOT_FOUND');
                 }
 
-                // Check if user already has this pet
-                const existingPet = await this.db.get(
-                    'SELECT id FROM user_pets WHERE user_id = ? AND pet_id = ?',
-                    [userId, petId]
-                );
-
                 if (existingPet) {
                     throw new Error('PET_ALREADY_OWNED');
                 }
 
-                // Check if user has enough balance
                 if (user.balance < pet.base_price) {
                     throw new Error('INSUFFICIENT_BALANCE');
                 }
 
-                // Purchase pet atomically
                 console.log(`💳 Before purchase: User ${userId} balance = ${user.balance}, pet cost = ${pet.base_price}`);
 
-                await this.db.run(
-                    'UPDATE users SET balance = balance - ? WHERE id = ?',
-                    [pet.base_price, userId]
-                );
+                // Execute all purchase operations in a single atomic transaction
+                const purchaseOperations = [
+                    { type: 'run', query: 'UPDATE users SET balance = balance - ? WHERE id = ?', params: [pet.base_price, userId] },
+                    { type: 'run', query: 'INSERT INTO user_pets (user_id, pet_id) VALUES (?, ?)', params: [userId, petId] },
+                    { type: 'run', query: 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', params: [userId, 'pet', -pet.base_price, `Покупка питомца: ${pet.name}`] },
+                    { type: 'get', query: 'SELECT balance FROM users WHERE id = ?', params: [userId] }
+                ];
 
-                const insertResult = await this.db.run(
-                    'INSERT INTO user_pets (user_id, pet_id) VALUES (?, ?)',
-                    [userId, petId]
-                );
+                const purchaseResults = await this.db.transaction(purchaseOperations);
+                const insertResult = purchaseResults[1];
+                const updatedUser = purchaseResults[3];
 
-                // Log transaction
-                await this.db.run(
-                    'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
-                    [userId, 'pet', -pet.base_price, `Покупка питомца: ${pet.name}`]
-                );
-
-                // Verify the transaction worked
-                const updatedUser = await this.db.get('SELECT balance FROM users WHERE id = ?', [userId]);
                 console.log(`✅ Pet purchased successfully: User ${userId} bought pet ${petId} (${pet.name}) for ${pet.base_price} stars`);
                 console.log(`💰 Transaction verified: Previous balance: ${user.balance}, Cost: ${pet.base_price}, Final balance: ${updatedUser.balance}`);
 
                 return {
                     success: true,
                     pet,
-                    remainingBalance: user.balance - pet.base_price,
-                    userPetId: insertResult.lastID
+                    remainingBalance: updatedUser.balance,
+                    userPetId: insertResult.id
                 };
             });
 
@@ -498,7 +495,7 @@ class PetController {
                     message_id: messageId,
                     reply_markup: {
                         inline_keyboard: [
-                            [{ text: '⬆️ Улучшить питомца', callback_data: 'pet_upgrade' }],
+                            [{ text: '⬆️ Улуч��ить питомца', callback_data: 'pet_upgrade' }],
                             [{ text: '🐾 Мои питомцы', callback_data: 'pet_back' }]
                         ]
                     }
@@ -526,7 +523,7 @@ class PetController {
                 errorMsg = '❌ У вас уже есть этот питомец!';
                 backButton = 'pet_shop';
             } else if (error.message === 'INSUFFICIENT_BALANCE') {
-                errorMsg = '❌ Недостаточно звёзд для покупки!';
+                errorMsg = '❌ Недоста��очно звёзд для покупки!';
                 backButton = 'pet_shop';
             }
 
@@ -617,22 +614,14 @@ class PetController {
                 return;
             }
 
-            // Upgrade pet
-            await this.db.run(
-                'UPDATE users SET balance = balance - ? WHERE id = ?',
-                [upgradeCost, userId]
-            );
+            // Upgrade pet atomically with transaction
+            const upgradeOperations = [
+                { type: 'run', query: 'UPDATE users SET balance = balance - ? WHERE id = ?', params: [upgradeCost, userId] },
+                { type: 'run', query: 'UPDATE user_pets SET level = level + 1 WHERE id = ?', params: [userPetId] },
+                { type: 'run', query: 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', params: [userId, 'pet', -upgradeCost, `Улучшение ${userPet.name} до ур.${userPet.level + 1}`] }
+            ];
 
-            await this.db.run(
-                'UPDATE user_pets SET level = level + 1 WHERE id = ?',
-                [userPetId]
-            );
-
-            // Log transaction
-            await this.db.run(
-                'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
-                [userId, 'pet', -upgradeCost, `Улучшение ${userPet.name} до ур.${userPet.level + 1}`]
-            );
+            await this.db.transaction(upgradeOperations);
 
             const newLevel = userPet.level + 1;
             const newBoost = (userPet.boost_multiplier * newLevel * 100).toFixed(1);

@@ -201,15 +201,13 @@ class UserController {
             const baseLevel1Reward = 3;
             const finalLevel1Reward = baseLevel1Reward + level1Boost;
 
-            await this.db.run(
-                'UPDATE users SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?',
-                [finalLevel1Reward, finalLevel1Reward, referrerId]
-            );
+            // Award level 1 referral reward atomically
+            const level1Operations = [
+                { type: 'run', query: 'UPDATE users SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?', params: [finalLevel1Reward, finalLevel1Reward, referrerId] },
+                { type: 'run', query: 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', params: [referrerId, 'referral', finalLevel1Reward, `Реферал активирован (ID: ${newUserId}) +${level1Boost} буст`] }
+            ];
 
-            await this.db.run(
-                'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
-                [referrerId, 'referral', finalLevel1Reward, `Реферал активирован (ID: ${newUserId}) +${level1Boost} буст`]
-            );
+            await this.db.transaction(level1Operations);
 
             // Send congratulations message to referrer
             const newUserInfo = await this.db.get('SELECT username, first_name FROM users WHERE id = ?', [newUserId]);
@@ -283,7 +281,7 @@ class UserController {
 
 💰 **Награда:** ${finalLevel2Reward.toFixed(3)} ⭐${level2BoostInfo}
 
-🔥 Приглашайте больше друзей для увеличения доходов!`, {
+�� Приглашайте больше друзей для увеличения доходов!`, {
                         parse_mode: 'Markdown',
                         reply_markup: {
                             inline_keyboard: [
