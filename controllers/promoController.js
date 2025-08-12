@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class PromoController {
     constructor(database, bot) {
         this.db = database;
@@ -49,7 +51,7 @@ class PromoController {
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {

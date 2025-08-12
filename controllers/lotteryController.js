@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class LotteryController {
     constructor(database, bot) {
         this.db = database;
@@ -26,7 +28,7 @@ class LotteryController {
                 ]];
 
                 if (messageId) {
-                    await this.bot.editMessageText(message, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,message, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -98,7 +100,7 @@ class LotteryController {
             keyboard.push([{ text: '🏠 Главное меню', callback_data: 'main_menu' }]);
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -118,7 +120,7 @@ class LotteryController {
             const errorMsg = '❌ Ошибка при загрузке лотерей';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -259,7 +261,7 @@ class LotteryController {
         try {
             const lottery = await this.db.get('SELECT * FROM lotteries WHERE id = ?', [lotteryId]);
             if (!lottery) {
-                await this.bot.sendMessage(chatId, '❌ Лотерея не найден��');
+                await this.bot.sendMessage(chatId, '❌ Лотерея не найдена');
                 return;
             }
 

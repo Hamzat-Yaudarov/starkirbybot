@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class ReferralController {
     constructor(database, bot) {
         this.db = database;
@@ -36,7 +38,7 @@ https://t.me/kirbystarsfarmbot?start=${user.referral_code}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(referralMessage, {
+                await SafeMessageHelper.safeEditMessage(this.bot,referralMessage, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {

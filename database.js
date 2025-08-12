@@ -221,7 +221,7 @@ class Database {
             const hasBoostType = tableInfo.some(col => col.name === 'boost_type');
 
             if (hasBoostType) {
-                await this.run('UPDATE pets SET boost_type = ? WHERE boost_type IS NULL OR boost_type = ""', ['click']);
+                await this.run('UPDATE pets SET boost_type = ? WHERE boost_type IS NULL OR boost_type = ?', ['click', '']);
                 console.log('Updated existing pets with default boost_type');
             } else {
                 console.log('boost_type column does not exist yet');

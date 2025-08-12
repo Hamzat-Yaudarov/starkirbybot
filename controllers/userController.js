@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const SafeMessageHelper = require('../utils/safeMessageHelper');
 
 class UserController {
     constructor(database, bot) {
@@ -306,7 +307,7 @@ class UserController {
             const user = await this.db.get('SELECT * FROM users WHERE id = ?', [userId]);
             if (!user) {
                 if (messageId) {
-                    await this.bot.editMessageText('❌ Пользователь не найден', {
+                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Пользователь не найден', {
                         chat_id: chatId,
                         message_id: messageId
                     });
@@ -375,7 +376,7 @@ class UserController {
 
 👥 **Реферальная сеть:**
 ├ Прямые рефералы: ${user.level1_referrals} пользователей
-└ Рефералы 2-го уровня: ${user.level2_referrals} пользователей
+└ Рефералы 2-го уровня: ${user.level2_referrals} пол��зователей
 
 ${petsInfo}${boostInfo}
 
@@ -401,7 +402,7 @@ ${petsInfo}${boostInfo}
             };
 
             if (messageId) {
-                await this.bot.editMessageText(profileMessage, {
+                await SafeMessageHelper.safeEditMessage(this.bot,profileMessage, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -467,7 +468,7 @@ ${petsInfo}${boostInfo}
                 };
 
                 if (messageId) {
-                    await this.bot.editMessageText(alreadyClickedMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,alreadyClickedMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         parse_mode: 'Markdown',
@@ -537,7 +538,7 @@ ${petsInfo}${boostInfo}
             };
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',

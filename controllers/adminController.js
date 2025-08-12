@@ -21,7 +21,7 @@ class AdminController {
         if (!this.isAdmin(userId)) {
             const errorMsg = '❌ У ва�� нет доступа к админ-п��нели';
             if (messageId) {
-                await this.bot.editMessageText(errorMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                     chat_id: chatId,
                     message_id: messageId
                 });
@@ -50,7 +50,7 @@ class AdminController {
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 reply_markup: {
@@ -158,7 +158,7 @@ class AdminController {
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -180,7 +180,7 @@ class AdminController {
             const errorMsg = '❌ Ошибка при загрузке статистики';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -218,7 +218,7 @@ class AdminController {
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 reply_markup: {
@@ -427,7 +427,7 @@ class AdminController {
             console.error('Error details:', error.message);
             try {
                 if (msg.message_id) {
-                    await this.bot.editMessageText(`❌ ��шибка при выпо��н��нии дейс��вия: ${error.message}`, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,`❌ ��шибка при выпо��н��нии дейс��вия: ${error.message}`, {
                         chat_id: chatId,
                         message_id: msg.message_id,
                         reply_markup: {
@@ -564,7 +564,7 @@ class AdminController {
                 LIMIT 20
             `);
 
-            let message = `���� Неактивные пользователи (не кликали 7+ дней):\n\n`;
+            let message = `���� Неактивные польз��ватели (не кликали 7+ дней):\n\n`;
 
             if (users.length === 0) {
                 message += 'Все пользователи акти��ны!';
@@ -788,7 +788,7 @@ class AdminController {
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -875,7 +875,7 @@ class AdminController {
 
         const message = `➕ Создание промокода
 
-Отправьте данные в формате:
+Отправьте данные в фор��ате:
 КОД НАГРАДА ЛИМИТ [ДНЕЙ_ДЕЙС��ВИЯ]
 
 Примеры:
@@ -893,7 +893,7 @@ class AdminController {
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 reply_markup: {
@@ -1040,7 +1040,7 @@ class AdminController {
             const taskData = taskDataString.split('|');
 
             if (taskData.length < 4) {
-                await this.bot.sendMessage(chatId, `❌ Неверный ф��рмат данных задания. Получено ${taskData.length} частей, нуж��о 4.
+                await this.bot.sendMessage(chatId, `❌ Неверный ф��рмат данных задания. Получен�� ${taskData.length} частей, нуж��о 4.
 
 **При��ер правильного формата:**
 \`chat Подписаться на чат|чат с выводами|4|https://t.me/kirbyvivodstars\`
@@ -1164,7 +1164,7 @@ ${type}`, {
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -1248,7 +1248,7 @@ ${type}`, {
 ТИП НАЗВАНИЕ|ОПИСАНИЕ|НАГРАДА|ССЫЛКА
 
 Типы заданий:
-• channel - подписка на канал
+• channel - подпис��а на канал
 • chat - вступлени�� в чат
 • bot - запуск бота
 
@@ -1389,7 +1389,7 @@ channel Подписаться на канал|Подпишитесь на на�
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -1468,7 +1468,7 @@ channel Подписаться на канал|Подпишитесь на на�
         const message = `➕ Создание лотереи
 
 Отправьте данные в формате:
-НАЗВАНИЕ|ОПИСАНИЕ|ЦЕНА_БИЛЕТА|ДНИ_ДЕЙСТВИЯ|КОМИССИЯ_БОТА
+НАЗВАНИЕ|ОПИСАНИЕ|ЦЕНА_БИЛЕТА|ДНИ_ДЕЙС��ВИЯ|КОМИССИЯ_БОТА
 
 Пример:
 Еженедел��ная лотерея|Большие призы каждую неделю|5|7|0.1
@@ -1618,7 +1618,7 @@ channel Подписаться на канал|Подпишитесь на на�
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -1701,7 +1701,7 @@ ${type}
 **Пример:**
 \`@example_channel|Мой канал|https://t.me/example_channel|open\`
 
-Где раз��ели��ель - символ \`|\``;
+Где ��аз��ели��ель - символ \`|\``;
 
         const keyboard = [
             [{ text: '🔙 Назад', callback_data: 'admin_channels' }]
@@ -1912,7 +1912,7 @@ ${type}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -2054,7 +2054,7 @@ ID: \`${user.id}\`
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -2076,7 +2076,7 @@ ID: \`${user.id}\`
             const errorMsg = '❌ Ошибка при загрузке ��ктивных пользователей';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -2138,7 +2138,7 @@ ID: \`${user.id}\`
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -2160,7 +2160,7 @@ ID: \`${user.id}\`
             const errorMsg = '❌ Ошибк�� при з��грузке неактивных пользователей';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -2219,7 +2219,7 @@ ID: \`${user.id}\`
             }
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -2241,7 +2241,7 @@ ID: \`${user.id}\`
             const errorMsg = '❌ Ошибка при загрузке заданий для удаления';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -2317,7 +2317,7 @@ ID задания: ${taskId}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -2337,7 +2337,7 @@ ID задания: ${taskId}
             const errorMsg = '❌ Ошибка при удалении задания';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -2396,7 +2396,7 @@ ID задания: ${taskId}
             }
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -2418,7 +2418,7 @@ ID задания: ${taskId}
             const errorMsg = '❌ Ошибка при загрузке каналов для удаления';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -2466,7 +2466,7 @@ ID задания: ${taskId}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -2488,7 +2488,7 @@ ID задания: ${taskId}
             const errorMsg = '❌ Ошибка при удале��ии канала';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -2529,7 +2529,7 @@ ID задания: ${taskId}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 reply_markup: {
@@ -2582,7 +2582,7 @@ ID задания: ${taskId}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -2609,7 +2609,7 @@ ID задания: ${taskId}
         const message = `➕ **СОЗДАНИЕ ПИТОМЦА**
 
 📝 **Простой формат:**
-\`НАЗВАНИЕ|ОПИСАНИЕ|ЦЕНА|ТИП_БУСТА|БУСТ|УРОВЕНЬ\`
+\`НАЗВАНИЕ|ОПИСАНИЕ|ЦЕНА|Т��П_БУСТА|БУСТ|УРОВЕНЬ\`
 
 🚀 **Типы бустов:**
 • \`click\` — добавляет звёзды к ежедневному клику
@@ -2637,7 +2637,7 @@ ID задания: ${taskId}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 reply_markup: {
@@ -2754,7 +2754,7 @@ ID задания: ${taskId}
             }
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -2813,7 +2813,7 @@ ID задания: ${taskId}
             }
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -2865,7 +2865,7 @@ ID задания: ${taskId}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -2912,7 +2912,7 @@ ID задания: ${taskId}
             }
 
             if (!['click', 'referral_1', 'referral_2', 'task'].includes(boostType.trim())) {
-                await this.bot.sendMessage(chatId, '❌ Неверный тип буста. Используйте: click, referral_1, referral_2, task');
+                await this.bot.sendMessage(chatId, '❌ Неверный тип буста. Исп��льзуйте: click, referral_1, referral_2, task');
                 return;
             }
 
@@ -2943,7 +2943,7 @@ ID задания: ${taskId}
             if (error.message.includes('UNIQUE constraint failed')) {
                 await this.bot.sendMessage(chatId, '��� Питомец с таким названием уже существует');
             } else {
-                await this.bot.sendMessage(chatId, '❌ Ошибка при редактировании питомца');
+                await this.bot.sendMessage(chatId, '❌ Ошибка пр�� редактировании питомца');
             }
         }
     }
@@ -2993,7 +2993,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -3037,12 +3037,12 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
 🐾 Питомец "${pet.name}" был ${statusText}.`;
 
             const keyboard = [
-                [{ text: '✏️ Редактир��в��ть ещё', callback_data: 'admin_pet_edit' }],
+                [{ text: '✏️ ��едактир��в��ть ещё', callback_data: 'admin_pet_edit' }],
                 [{ text: '🔙 Назад к питомцам', callback_data: 'admin_pets' }]
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -3088,7 +3088,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -3144,7 +3144,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -3163,7 +3163,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
             console.error('Error deleting all tasks:', error);
             const errorMsg = '❌ Ошибка при удалении всех заданий';
             if (messageId) {
-                await this.bot.editMessageText(errorMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -3203,7 +3203,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 reply_markup: {
@@ -3299,7 +3299,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -3337,7 +3337,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
 
 ⚡ **Быстро, просто, выгодно!**
 
-🔥 Чем больше заданий выполнишь — тем больше звёзд получишь!
+🔥 Чем больше заданий выполнишь — тем больше звёзд получ��шь!
 
 💎 Собирай звёзды и обменивай их на Telegram Premium!
 
@@ -3356,7 +3356,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -3378,7 +3378,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
         if (!this.isAdmin(userId)) return;
 
         try {
-            // Получаем всех пользователей
+            // П��лучаем всех пользователей
             const users = await this.db.all('SELECT id FROM users');
 
             await this.bot.sendMessage(chatId, `🚀 Начинаю рассылку "Топ недели"...
@@ -3476,7 +3476,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
             const broadcastKeyboard = {
                 inline_keyboard: [
                     [
-                        { text: '🏠 Главное меню', callback_data: 'main_menu' },
+                        { text: '🏠 Главное ме��ю', callback_data: 'main_menu' },
                         { text: '📋 Задания', callback_data: 'menu_tasks' }
                     ]
                 ]
@@ -3541,7 +3541,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'Markdown',
@@ -3583,7 +3583,7 @@ ${pet.is_active ? '✅ **Активен**' : '❌ **Неактивен**'}
         ];
 
         if (messageId) {
-            await this.bot.editMessageText(message, {
+            await SafeMessageHelper.safeEditMessage(this.bot,message, {
                 chat_id: chatId,
                 message_id: messageId,
                 reply_markup: {
@@ -3753,7 +3753,7 @@ ${topList}`;
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -3849,7 +3849,7 @@ ${topList}`;
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -3919,7 +3919,7 @@ ${topList}`;
 
             const boostTypeName = this.getBoostTypeName(boostType);
 
-            await this.bot.editMessageText(`✅ **Питомец создан из шаблона!**
+            await SafeMessageHelper.safeEditMessage(this.bot,`✅ **Питомец создан из шаблона!**
 
 🐾 **${name}**
 📝 ${description}
@@ -3949,7 +3949,7 @@ ${topList}`;
             await this.bot.answerCallbackQuery(callbackQuery.id, '❌ О��ибка при создании');
 
             if (error.message.includes('UNIQUE constraint failed')) {
-                await this.bot.editMessageText('❌ Питомец с таким названием уже существует!', {
+                await SafeMessageHelper.safeEditMessage(this.bot,'❌ Питомец с таким названием уже существует!', {
                     chat_id: chatId,
                     message_id: msg.message_id,
                     reply_markup: {
@@ -4014,7 +4014,7 @@ ${topList}`;
 **Пример:**
 \`🐱 Новый котик|Описание питомца|75|click|2|10\``;
 
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: msg.message_id,
                     parse_mode: 'Markdown',
@@ -4090,7 +4090,7 @@ ${topList}`;
 💰 **Выигрыш:** ${lottery.total_pool.toFixed(2)} ⭐
 👥 **Участников:** ${participants.length}
 
-Победитель уведомлен и приз зачислен на баланс!`;
+Победитель уведомлен и ��риз зачислен на баланс!`;
 
             // Уведомляем победителя
             try {
@@ -4106,7 +4106,7 @@ ${topList}`;
             }
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',

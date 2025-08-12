@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class CaseController {
     constructor(database, bot) {
         this.db = database;
@@ -39,7 +41,7 @@ class CaseController {
                 ]];
 
                 if (messageId) {
-                    await this.bot.editMessageText(message, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,message, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -73,7 +75,7 @@ https://t.me/kirbystarsfarmbot?start=${user.referral_code}`;
                 ];
 
                 if (messageId) {
-                    await this.bot.editMessageText(message, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,message, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -113,7 +115,7 @@ https://t.me/kirbystarsfarmbot?start=${user.referral_code}`;
             keyboard.push([{ text: '🏠 Главное меню', callback_data: 'main_menu' }]);
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -133,7 +135,7 @@ https://t.me/kirbystarsfarmbot?start=${user.referral_code}`;
             const errorMsg = '❌ Ошибка при загрузке кейсов';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -272,7 +274,7 @@ https://t.me/kirbystarsfarmbot?start=${user.referral_code}`;
 
 ✨ Отличная удача! Приглашайте ещё друзей, чтобы получить больше кейсов завтра!`;
 
-                    await this.bot.editMessageText(resultMessage, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,resultMessage, {
                         chat_id: chatId,
                         message_id: sentMessage.message_id,
                         reply_markup: {

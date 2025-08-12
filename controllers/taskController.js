@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class TaskController {
     constructor(database, bot) {
         this.db = database;
@@ -29,7 +31,7 @@ class TaskController {
                 ]];
 
                 if (messageId) {
-                    await this.bot.editMessageText(noTasksMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,noTasksMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         parse_mode: 'Markdown',
@@ -56,7 +58,7 @@ class TaskController {
             const errorMsg = '❌ Ошибка при загрузке заданий';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -113,7 +115,7 @@ ${this.getTaskInstructions(task.type)}`;
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(taskMessage, {
+                await SafeMessageHelper.safeEditMessage(this.bot,taskMessage, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -135,7 +137,7 @@ ${this.getTaskInstructions(task.type)}`;
             const errorMsg = '❌ Ошибка при загрузке задания';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -196,7 +198,7 @@ ${this.getTaskInstructions(task.type)}`;
         } catch (error) {
             console.error('Error handling task callback:', error);
             try {
-                await this.bot.editMessageText('❌ Ошибка при обработке задания', {
+                await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при обработке задания', {
                     chat_id: chatId,
                     message_id: msg.message_id,
                     reply_markup: {
@@ -219,7 +221,7 @@ ${this.getTaskInstructions(task.type)}`;
             if (!task) {
                 const errorMsg = '❌ Задание не найдено или неактивно';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -243,7 +245,7 @@ ${this.getTaskInstructions(task.type)}`;
             if (completed) {
                 const errorMsg = '❌ Вы уже выполнили это задание';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -278,7 +280,7 @@ ${this.getTaskInstructions(task.type)}`;
                 ];
 
                 if (messageId) {
-                    await this.bot.editMessageText(notCompletedMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,notCompletedMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         parse_mode: 'Markdown',
@@ -338,7 +340,7 @@ ${this.getTaskInstructions(task.type)}`;
             // Get updated user balance
             const updatedUser = await this.db.get('SELECT balance FROM users WHERE id = ?', [userId]);
 
-            const boostInfo = taskBoost > 0 ? ` (базовая ${task.reward} + буст +${taskBoost} от питомцев)` : '';
+            const boostInfo = taskBoost > 0 ? ` (базовая ${task.reward} + буст +${taskBoost} от питомц��в)` : '';
 
             const successMsg = `✅ **Задание выполнено!**
 
@@ -356,7 +358,7 @@ ${this.getTaskInstructions(task.type)}`;
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -378,7 +380,7 @@ ${this.getTaskInstructions(task.type)}`;
             const errorMsg = '❌ Ошибка при получении награды';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {

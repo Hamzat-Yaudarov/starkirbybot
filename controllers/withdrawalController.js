@@ -95,14 +95,14 @@ class WithdrawalController {
 • Заявки обрабатываются администратором
 • Время обработки: до 24 часов
 • При отклонении звёзды возвращаются
-• ��ожно подать только одну заявку за раз
+• Можно подать только одну заявку за раз
 
 💡 Зарабатывайте больше звёзд, чтобы делать выводы!`;
 
             keyboard.push([{ text: '🏠 Главное меню', callback_data: 'main_menu' }]);
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -122,7 +122,7 @@ class WithdrawalController {
             const errorMsg = '❌ Ошибка при загрузке вывода';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -207,7 +207,7 @@ class WithdrawalController {
             // Log transaction
             await this.db.run(
                 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
-                [userId, 'withdrawal_request', -withdrawalInfo.amount, `Заявка на вывод: ${withdrawalInfo.description}`]
+                [userId, 'withdrawal_request', -withdrawalInfo.amount, `Заявка на в��вод: ${withdrawalInfo.description}`]
             );
 
             // Send to admin chat
@@ -298,7 +298,7 @@ class WithdrawalController {
             );
 
             if (!withdrawal) {
-                await this.bot.editMessageText('❌ Заявка не найдена', {
+                await SafeMessageHelper.safeEditMessage(this.bot,'❌ Заявка не найдена', {
                     chat_id: msg.chat.id,
                     message_id: msg.message_id
                 });
@@ -306,7 +306,7 @@ class WithdrawalController {
             }
 
             if (withdrawal.status !== 'pending') {
-                await this.bot.editMessageText('❌ Заявка уже обработана', {
+                await SafeMessageHelper.safeEditMessage(this.bot,'❌ Заявка уже обработана', {
                     chat_id: msg.chat.id,
                     message_id: msg.message_id
                 });
@@ -331,7 +331,7 @@ class WithdrawalController {
                 `@${withdrawal.username}` : 
                 `[${withdrawal.first_name}](tg://user?id=${withdrawal.user_id})`;
 
-            await this.bot.editMessageText(`✅ Заявка одобрена!
+            await SafeMessageHelper.safeEditMessage(this.bot,`✅ Заявка одобрена!
 
 🆔 Заявка: #${withdrawalId}
 👤 Пользователь: ${userLink}
@@ -361,7 +361,7 @@ class WithdrawalController {
     // Prompt for rejection reason
     async promptRejectReason(withdrawalId, msg) {
         try {
-            await this.bot.editMessageText(`❌ Отклонение заявки #${withdrawalId}
+            await SafeMessageHelper.safeEditMessage(this.bot,`❌ Отклонение заявки #${withdrawalId}
 
 Введите причину отклонения:`, {
                 chat_id: msg.chat.id,
@@ -408,7 +408,7 @@ class WithdrawalController {
             // Log transaction
             await this.db.run(
                 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
-                [withdrawal.user_id, 'withdrawal_rejected', withdrawal.amount, `Вывод отклонён: ${reason}`]
+                [withdrawal.user_id, 'withdrawal_rejected', withdrawal.amount, `Вывод отклонё��: ${reason}`]
             );
 
             // Notify user
