@@ -62,10 +62,10 @@ class WeeklyRewardsController {
                 const place = places[i];
                 const placeName = placeNames[i];
 
-                // Начисляем награду
+                // Начисляем ��аграду
                 await this.db.run(
-                    'UPDATE users SET balance = balance + ? WHERE id = ?',
-                    [reward, user.id]
+                    'UPDATE users SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?',
+                    [reward, reward, user.id]
                 );
 
                 // Записываем транзакцию
@@ -112,7 +112,7 @@ ${place} Вы заняли **${placeName}** в еженедельном рейт
             await this.bot.sendMessage(this.adminId, adminMessage);
 
             // Отправляем объявление всем пользователям о победителях
-            winnersMessage += `\n🔥 **Новая неделя — новые возможности!**\n\n👥 Приглашай друзей и п��пади в топ-5 на следующей неделе!`;
+            winnersMessage += `\n🔥 **Новая неделя — новые возможности!**\n\n👥 Приглашай друзей �� п��пади в топ-5 на следующей неделе!`;
 
             const allUsers = await this.db.all('SELECT id FROM users');
             let sentCount = 0;

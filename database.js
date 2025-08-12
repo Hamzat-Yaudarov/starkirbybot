@@ -286,24 +286,13 @@ class Database {
             { name: '🦄 Единорог', description: 'Мифический единорог - максимальный буст за клики', base_price: 1000, boost_type: 'click', boost_multiplier: 10 }
         ];
 
-        // REMOVE ALL DEFAULT PETS as requested by user
+        // PRESERVE USER DATA - Only remove default pets if they don't have user ownership
         try {
-            console.log('🗑️ Removing all default pets as requested...');
-
-            // First, delete all user_pets to avoid foreign key constraints
-            const deletedUserPets = await this.run('DELETE FROM user_pets WHERE pet_id IN (SELECT id FROM pets)');
-            console.log(`Removed ${deletedUserPets.changes} user pets`);
-
-            // Then delete all pets
-            const deletedPets = await this.run('DELETE FROM pets');
-            console.log(`✅ Removed ${deletedPets.changes} default pets`);
-
-            // Also clear any pet-related transactions
-            await this.run('DELETE FROM transactions WHERE type = ?', ['pet_purchase']);
-            console.log('Cleared pet purchase transactions');
-
+            console.log('🔒 Preserving all user data - no default pet removal');
+            console.log('📊 User data will remain intact');
+            // No deletion - preserve all user pets and purchases
         } catch (error) {
-            console.log('Error removing default pets:', error.message);
+            console.log('Error in data preservation:', error.message);
         }
 
         // Insert default cases only if none exist
@@ -326,13 +315,13 @@ class Database {
             console.log('Cases already exist, skipping insertion');
         }
 
-        // REMOVE ALL DEFAULT TASKS as requested by user
+        // PRESERVE USER TASK HISTORY - No task deletion to maintain data integrity
         try {
-            console.log('🗑️ Removing all default tasks as requested...');
-            const deletedTasks = await this.run('DELETE FROM tasks');
-            console.log(`✅ Removed ${deletedTasks.changes} default tasks`);
+            console.log('🔒 Preserving all task and user_task data');
+            console.log('📊 User task completion history will remain intact');
+            // No deletion - preserve all user task progress
         } catch (error) {
-            console.log('Error removing default tasks:', error.message);
+            console.log('Error in task data preservation:', error.message);
         }
     }
 

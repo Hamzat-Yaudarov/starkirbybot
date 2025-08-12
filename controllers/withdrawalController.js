@@ -332,7 +332,7 @@ class WithdrawalController {
                 `@${withdrawal.username}` : 
                 `[${withdrawal.first_name}](tg://user?id=${withdrawal.user_id})`;
 
-            await SafeMessageHelper.safeEditMessage(this.bot,`✅ Заявка одо��рена!
+            await SafeMessageHelper.safeEditMessage(this.bot,`✅ Заявка одобрена!
 
 🆔 Заявка: #${withdrawalId}
 👤 Пользователь: ${userLink}
@@ -352,7 +352,7 @@ class WithdrawalController {
 💰 Сумма: ${withdrawal.amount} ⭐
 📝 Тип: ${withdrawalInfo.description}
 
-🎉 Поздравляем! Ваш вывод будет обработан в ближайшее время.`);
+🎉 Поздравляем! Ваш вывод будет обраб��тан в ближайшее время.`);
 
         } catch (error) {
             console.error('Error approving withdrawal:', error);
@@ -399,6 +399,7 @@ class WithdrawalController {
                 'UPDATE users SET balance = balance + ? WHERE id = ?',
                 [withdrawal.amount, withdrawal.user_id]
             );
+            // Note: No total_earned update for refunds as they are returns, not new earnings
 
             // Update withdrawal status
             await this.db.run(
