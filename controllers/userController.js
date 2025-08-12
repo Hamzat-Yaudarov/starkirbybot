@@ -1,11 +1,21 @@
 const crypto = require('crypto');
 const SafeMessageHelper = require('../utils/safeMessageHelper');
+const InstanceCoordinator = require('../utils/instanceCoordinator');
 
 class UserController {
     constructor(database, bot) {
         this.db = database;
         this.bot = bot;
         this.processingRewards = new Set(); // Track users currently being processed
+        this.coordinator = null; // Will be initialized later
+    }
+
+    // Initialize coordinator after database is ready
+    async initCoordinator() {
+        if (!this.coordinator) {
+            this.coordinator = new InstanceCoordinator(this.db);
+            await this.coordinator.init();
+        }
     }
 
     // Generate unique referral code
@@ -323,6 +333,11 @@ class UserController {
         const lockKey = `profile_${userId}`;
 
         try {
+            // Ensure coordinator is initialized
+            if (!this.coordinator) {
+                await this.initCoordinator();
+            }
+
             // Use instance coordination to prevent multiple profile updates
             const profileData = await this.coordinator.withLock(lockKey, async () => {
                 // Get all profile data atomically

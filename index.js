@@ -98,7 +98,7 @@ bot.on('polling_error', (error) => {
 });
 const db = new Database();
 
-// Initialize controllers
+// Initialize controllers (without coordinators yet)
 const userController = new UserController(db, bot);
 const taskController = new TaskController(db, bot);
 const referralController = new ReferralController(db, bot);
@@ -191,7 +191,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 🎯 **Возможност�� заработка:**
 • 👆 Ежедневные кл��ки — стабильный доход
 • 📋 Выполнение заданий — быстрые награды
-• 👥 Реферальная программа — пассивный доход
+• 👥 Реферальная программа — пассивный до��од
 • 🐾 Питомцы — увеличение всех доходов
 • 📦 Кейсы — случайные крупные призы
 • 🎰 Лотереи — шанс на джекпот
@@ -473,8 +473,8 @@ async function init() {
 
         // Initialize instance coordination for all controllers
         console.log('🔒 Initializing instance coordination...');
-        await userController.coordinator.init();
-        await petController.coordinator.init();
+        await userController.initCoordinator();
+        await petController.initCoordinator();
         console.log('✅ Instance coordination initialized successfully');
 
         // Start polling after successful initialization
@@ -514,8 +514,12 @@ process.on('SIGINT', async () => {
 async function cleanup() {
     try {
         console.log('🧹 Cleaning up instance coordination...');
-        await userController.coordinator.cleanup();
-        await petController.coordinator.cleanup();
+        if (userController.coordinator) {
+            await userController.coordinator.cleanup();
+        }
+        if (petController.coordinator) {
+            await petController.coordinator.cleanup();
+        }
         console.log('✅ Cleanup completed');
     } catch (error) {
         console.error('❌ Error during cleanup:', error);

@@ -125,27 +125,20 @@ class InstanceCoordinator {
     // Execute database transaction with lock
     async lockedTransaction(lockKey, transactionFn, timeoutMs = this.lockTimeout) {
         return await this.withLock(lockKey, async () => {
-            return new Promise((resolve, reject) => {
-                this.db.serialize(() => {
-                    this.db.run('BEGIN TRANSACTION');
-                    
-                    Promise.resolve(transactionFn())
-                        .then(result => {
-                            this.db.run('COMMIT', (err) => {
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    resolve(result);
-                                }
-                            });
-                        })
-                        .catch(error => {
-                            this.db.run('ROLLBACK', () => {
-                                reject(error);
-                            });
-                        });
-                });
-            });
+            // Use manual transaction with the Database wrapper class
+            try {
+                await this.db.run('BEGIN TRANSACTION');
+                const result = await transactionFn();
+                await this.db.run('COMMIT');
+                return result;
+            } catch (error) {
+                try {
+                    await this.db.run('ROLLBACK');
+                } catch (rollbackError) {
+                    console.error('Error during rollback:', rollbackError);
+                }
+                throw error;
+            }
         }, timeoutMs);
     }
 

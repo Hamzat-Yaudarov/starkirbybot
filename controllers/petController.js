@@ -5,7 +5,15 @@ class PetController {
     constructor(database, bot) {
         this.db = database;
         this.bot = bot;
-        this.coordinator = new InstanceCoordinator(database);
+        this.coordinator = null; // Will be initialized later
+    }
+
+    // Initialize coordinator after database is ready
+    async initCoordinator() {
+        if (!this.coordinator) {
+            this.coordinator = new InstanceCoordinator(this.db);
+            await this.coordinator.init();
+        }
     }
 
     // Show pets menu
@@ -412,6 +420,11 @@ class PetController {
         const lockKey = `pet_buy_${userId}_${petId}`;
 
         try {
+            // Ensure coordinator is initialized
+            if (!this.coordinator) {
+                await this.initCoordinator();
+            }
+
             // Use locked transaction to prevent race conditions
             const result = await this.coordinator.lockedTransaction(lockKey, async () => {
                 // Re-fetch user and pet data inside transaction
