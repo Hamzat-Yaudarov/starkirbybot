@@ -2,7 +2,7 @@
 nixPkgs = ['nodejs-18_x', 'python3']
 
 [phases.install]
-cmds = ['npm ci']
+cmds = ['npm install --production=false']
 
 [phases.build]
 cmds = ['npm run build']
