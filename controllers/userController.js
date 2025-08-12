@@ -1,5 +1,7 @@
 const crypto = require('crypto');
 
+const crypto = require('crypto');
+
 class UserController {
     constructor(database, bot) {
         this.db = database;

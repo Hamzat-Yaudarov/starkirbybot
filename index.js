@@ -46,7 +46,8 @@ async function safeEditMessage(bot, text, options) {
         }
     } catch (error) {
         // If edit fails because message is the same, do nothing
-        if (error.message.includes('message is not modified')) {
+        if (error.message.includes('message is not modified') ||
+            error.message.includes('exactly the same as a current content')) {
             return;
         }
 
@@ -158,7 +159,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
         if (isBanned) {
             await bot.sendMessage(chatId, `🚫 Доступ запрещён
 
-Ваш аккаунт заблокирован за нарушение прав��л.
+Ваш аккаунт заблокирован за нарушение правил.
 Для разблокировки обратитесь к администратор��.`);
             return;
         }
@@ -190,7 +191,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
 💫 **Платформа для заработка Telegram Stars**
 
-🎯 **Возможн��ст�� заработка:**
+🎯 **Возможност�� заработка:**
 • 👆 Ежедневные клики — стабильный доход
 • 📋 Выполнение заданий — быстрые награды
 • 👥 Реферальная программа — пассивный доход
@@ -322,7 +323,7 @@ bot.on('message', async (msg) => {
                     ]);
                 }
 
-                await bot.sendMessage(chatId, '❓ Команда не распознана. Используйте кноп��и меню для навигации.', keyboard);
+                await bot.sendMessage(chatId, '❓ Команда не распознана. Используйте кнопки меню для навигации.', keyboard);
             }
         } catch (error) {
             console.error('Error handling message:', error);

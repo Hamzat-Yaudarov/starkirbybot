@@ -235,7 +235,7 @@ class Database {
         // Insert default pets
         const defaultPets = [
             { name: '🐱 Котёнок', description: 'Милый котёнок помогает зарабатывать больше звёзд за клики', base_price: 15, boost_type: 'click', boost_multiplier: 1 },
-            { name: '🐶 Щенок', description: 'Верный щенок приносит дополнительные звёзды за рефералов 1 уровня', base_price: 50, boost_type: 'referral_1', boost_multiplier: 2 },
+            { name: '🐶 Щенок', description: 'Верный щенок приносит допол��ительные звёзды за рефералов 1 уровня', base_price: 50, boost_type: 'referral_1', boost_multiplier: 2 },
             { name: '🦅 Орёл', description: 'Гордый орёл увеличивает награды за рефералов 2 уровня', base_price: 150, boost_type: 'referral_2', boost_multiplier: 3 },
             { name: '🐲 Дракон', description: 'Легендарный дракон даёт бонусы за выполнение заданий', base_price: 500, boost_type: 'task', boost_multiplier: 5 },
             { name: '🦄 Единорог', description: 'Мифический единорог - максимальный буст за клики', base_price: 1000, boost_type: 'click', boost_multiplier: 10 }
@@ -243,7 +243,7 @@ class Database {
 
         // Check if pets already exist to avoid duplicates
         const existingPets = await this.get('SELECT COUNT(*) as count FROM pets');
-        if (existingPets.count === 0) {
+        if (!existingPets || existingPets.count === 0) {
             console.log('Inserting default pets...');
             for (const pet of defaultPets) {
                 await this.run(
@@ -300,7 +300,7 @@ class Database {
         try {
             const stmt = this.db.prepare(query);
             const result = stmt.get(params);
-            return Promise.resolve(result);
+            return Promise.resolve(result || null);
         } catch (error) {
             return Promise.reject(error);
         }
@@ -310,7 +310,7 @@ class Database {
         try {
             const stmt = this.db.prepare(query);
             const result = stmt.all(params);
-            return Promise.resolve(result);
+            return Promise.resolve(result || []);
         } catch (error) {
             return Promise.reject(error);
         }
