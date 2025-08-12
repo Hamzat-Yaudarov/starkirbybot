@@ -1,9 +1,11 @@
 const SafeMessageHelper = require('../utils/safeMessageHelper');
+const InstanceCoordinator = require('../utils/instanceCoordinator');
 
 class PetController {
     constructor(database, bot) {
         this.db = database;
         this.bot = bot;
+        this.coordinator = new InstanceCoordinator(database);
     }
 
     // Show pets menu
@@ -251,7 +253,7 @@ class PetController {
             if (userPets.length === 0) {
                 const noPetsMessage = `😔 У вас нет питомцев для улучшения
 
-🛒 Сначала купите питомца в магазине!`;
+🛒 Сначала купите питомца в м��газине!`;
 
                 const noPetsKeyboard = [[
                     { text: '🛒 Купить питомца', callback_data: 'pet_shop' }
@@ -407,100 +409,73 @@ class PetController {
 
     // Buy a pet
     async buyPet(chatId, userId, petId, messageId = null) {
+        const lockKey = `pet_buy_${userId}_${petId}`;
+
         try {
-            const user = await this.db.get('SELECT balance FROM users WHERE id = ?', [userId]);
-            const pet = await this.db.get('SELECT * FROM pets WHERE id = ?', [petId]);
+            // Use locked transaction to prevent race conditions
+            const result = await this.coordinator.lockedTransaction(lockKey, async () => {
+                // Re-fetch user and pet data inside transaction
+                const user = await this.db.get('SELECT balance FROM users WHERE id = ?', [userId]);
+                const pet = await this.db.get('SELECT * FROM pets WHERE id = ?', [petId]);
 
-            if (!user || !pet) {
-                const errorMsg = '❌ Пользователь или питомец не найден';
-                if (messageId) {
-                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
-                        chat_id: chatId,
-                        message_id: messageId,
-                        reply_markup: {
-                            inline_keyboard: [[
-                                { text: '🔙 Назад к питомцам', callback_data: 'pet_back' }
-                            ]]
-                        }
-                    });
-                } else {
-                    await this.bot.sendMessage(chatId, errorMsg);
+                if (!user || !pet) {
+                    throw new Error('USER_OR_PET_NOT_FOUND');
                 }
-                return;
-            }
 
-            // Check if user already has this pet
-            const existingPet = await this.db.get(
-                'SELECT id FROM user_pets WHERE user_id = ? AND pet_id = ?',
-                [userId, petId]
-            );
+                // Check if user already has this pet
+                const existingPet = await this.db.get(
+                    'SELECT id FROM user_pets WHERE user_id = ? AND pet_id = ?',
+                    [userId, petId]
+                );
 
-            if (existingPet) {
-                const errorMsg = '❌ У вас уже есть этот питомец!';
-                if (messageId) {
-                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
-                        chat_id: chatId,
-                        message_id: messageId,
-                        reply_markup: {
-                            inline_keyboard: [[
-                                { text: '🔙 Назад к магазину', callback_data: 'pet_shop' }
-                            ]]
-                        }
-                    });
-                } else {
-                    await this.bot.sendMessage(chatId, errorMsg);
+                if (existingPet) {
+                    throw new Error('PET_ALREADY_OWNED');
                 }
-                return;
-            }
 
-            // Check if user has enough balance
-            if (user.balance < pet.base_price) {
-                const errorMsg = '❌ Недостаточно звёзд для покупки!';
-                if (messageId) {
-                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
-                        chat_id: chatId,
-                        message_id: messageId,
-                        reply_markup: {
-                            inline_keyboard: [[
-                                { text: '🔙 Назад к магазину', callback_data: 'pet_shop' }
-                            ]]
-                        }
-                    });
-                } else {
-                    await this.bot.sendMessage(chatId, errorMsg);
+                // Check if user has enough balance
+                if (user.balance < pet.base_price) {
+                    throw new Error('INSUFFICIENT_BALANCE');
                 }
-                return;
-            }
 
-            // Purchase pet
-            await this.db.run(
-                'UPDATE users SET balance = balance - ? WHERE id = ?',
-                [pet.base_price, userId]
-            );
+                // Purchase pet atomically
+                await this.db.run(
+                    'UPDATE users SET balance = balance - ? WHERE id = ?',
+                    [pet.base_price, userId]
+                );
 
-            await this.db.run(
-                'INSERT INTO user_pets (user_id, pet_id) VALUES (?, ?)',
-                [userId, petId]
-            );
+                const insertResult = await this.db.run(
+                    'INSERT INTO user_pets (user_id, pet_id) VALUES (?, ?)',
+                    [userId, petId]
+                );
 
-            // Log transaction
-            await this.db.run(
-                'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
-                [userId, 'pet', -pet.base_price, `Покупка питомца: ${pet.name}`]
-            );
+                // Log transaction
+                await this.db.run(
+                    'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
+                    [userId, 'pet', -pet.base_price, `Покупка питомца: ${pet.name}`]
+                );
 
-            const boostPercent = (pet.boost_multiplier * 100).toFixed(1);
+                console.log(`✅ Pet purchased successfully: User ${userId} bought pet ${petId} (${pet.name}) for ${pet.base_price} stars`);
+
+                return {
+                    success: true,
+                    pet,
+                    remainingBalance: user.balance - pet.base_price,
+                    userPetId: insertResult.lastID
+                };
+            });
+
+            const boostPercent = (result.pet.boost_multiplier * 100).toFixed(1);
             const successMsg = `🎉 Поздравляем с покупкой!
 
-🐾 Вы купили: ${pet.name}
-💰 Потрачено: ${pet.base_price} ⭐
-💎 Остаток: ${(user.balance - pet.base_price).toFixed(2)} ⭐
+🐾 Вы купили: ${result.pet.name}
+💰 Потрачено: ${result.pet.base_price} ⭐
+💎 Остаток: ${result.remainingBalance.toFixed(2)} ⭐
 
 📈 Ваш питомец даёт буст +${boostPercent}% к доходу!
 ⬆️ Улучшайте питомца, чтобы увеличить буст!`;
 
             if (messageId) {
-                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot, successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -523,15 +498,28 @@ class PetController {
 
         } catch (error) {
             console.error('Error buying pet:', error);
-            const errorMsg = '❌ Ошибка при покупке питомца';
+
+            let errorMsg = '❌ Ошибка при покупке питомца';
+            let backButton = 'pet_back';
+
+            if (error.message === 'USER_OR_PET_NOT_FOUND') {
+                errorMsg = '❌ Пользователь или питомец не найден';
+            } else if (error.message === 'PET_ALREADY_OWNED') {
+                errorMsg = '❌ У вас уже есть этот питомец!';
+                backButton = 'pet_shop';
+            } else if (error.message === 'INSUFFICIENT_BALANCE') {
+                errorMsg = '❌ Недостаточно звёзд для покупки!';
+                backButton = 'pet_shop';
+            }
+
             if (messageId) {
                 try {
-                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot, errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
                             inline_keyboard: [[
-                                { text: '🔙 Назад к питомцам', callback_data: 'pet_back' }
+                                { text: '🔙 Назад', callback_data: backButton }
                             ]]
                         }
                     });

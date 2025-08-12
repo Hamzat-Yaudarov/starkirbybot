@@ -471,6 +471,12 @@ async function init() {
         await db.init();
         console.log('✅ Database initialized successfully');
 
+        // Initialize instance coordination for all controllers
+        console.log('🔒 Initializing instance coordination...');
+        await userController.coordinator.init();
+        await petController.coordinator.init();
+        console.log('✅ Instance coordination initialized successfully');
+
         // Start polling after successful initialization
         console.log('🔄 Starting bot polling...');
         try {
@@ -489,6 +495,30 @@ async function init() {
         console.error('❌ Failed to initialize:', error.message);
         console.error('Full error:', error);
         process.exit(1);
+    }
+}
+
+// Graceful shutdown handler
+process.on('SIGTERM', async () => {
+    console.log('🛑 SIGTERM received, shutting down gracefully...');
+    await cleanup();
+    process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+    console.log('🛑 SIGINT received, shutting down gracefully...');
+    await cleanup();
+    process.exit(0);
+});
+
+async function cleanup() {
+    try {
+        console.log('🧹 Cleaning up instance coordination...');
+        await userController.coordinator.cleanup();
+        await petController.coordinator.cleanup();
+        console.log('✅ Cleanup completed');
+    } catch (error) {
+        console.error('❌ Error during cleanup:', error);
     }
 }
 

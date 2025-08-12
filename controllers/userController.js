@@ -320,27 +320,30 @@ class UserController {
 
     // Show user profile
     async showProfile(chatId, userId, messageId = null) {
-        try {
-            const user = await this.db.get('SELECT * FROM users WHERE id = ?', [userId]);
-            if (!user) {
-                if (messageId) {
-                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Пользователь не найден', {
-                        chat_id: chatId,
-                        message_id: messageId
-                    });
-                } else {
-                    await this.bot.sendMessage(chatId, '❌ Пользователь не н��йден');
-                }
-                return;
-            }
+        const lockKey = `profile_${userId}`;
 
-            // Get user pets by boost type
-            const userPets = await this.db.all(`
-                SELECT p.name, p.boost_multiplier, p.boost_type, up.level
-                FROM user_pets up
-                JOIN pets p ON up.pet_id = p.id
-                WHERE up.user_id = ?
-            `, [userId]);
+        try {
+            // Use instance coordination to prevent multiple profile updates
+            const profileData = await this.coordinator.withLock(lockKey, async () => {
+                // Get all profile data atomically
+                const user = await this.db.get('SELECT * FROM users WHERE id = ?', [userId]);
+                if (!user) {
+                    throw new Error('USER_NOT_FOUND');
+                }
+
+                // Get user pets by boost type
+                const userPets = await this.db.all(`
+                    SELECT p.name, p.boost_multiplier, p.boost_type, up.level
+                    FROM user_pets up
+                    JOIN pets p ON up.pet_id = p.id
+                    WHERE up.user_id = ?
+                    ORDER BY up.id ASC
+                `, [userId]);
+
+                return { user, userPets };
+            });
+
+            const { user, userPets } = profileData;
 
             let petsInfo = '';
             let clickBoost = 0;
@@ -419,7 +422,7 @@ ${petsInfo}${boostInfo}
             };
 
             if (messageId) {
-                await SafeMessageHelper.safeEditMessage(this.bot,profileMessage, {
+                await SafeMessageHelper.safeEditMessage(this.bot, profileMessage, {
                     chat_id: chatId,
                     message_id: messageId,
                     parse_mode: 'Markdown',
@@ -431,9 +434,25 @@ ${petsInfo}${boostInfo}
                     reply_markup: keyboard
                 });
             }
+
+            console.log(`✅ Profile displayed successfully for user ${userId}`);
+
         } catch (error) {
             console.error('Error showing profile:', error);
-            await this.bot.sendMessage(chatId, '❌ Ошибка при загрузке профиля');
+
+            if (error.message === 'USER_NOT_FOUND') {
+                const errorMsg = '❌ Пользователь не найден';
+                if (messageId) {
+                    await SafeMessageHelper.safeEditMessage(this.bot, errorMsg, {
+                        chat_id: chatId,
+                        message_id: messageId
+                    });
+                } else {
+                    await this.bot.sendMessage(chatId, errorMsg);
+                }
+            } else {
+                await this.bot.sendMessage(chatId, '❌ Ошибка при загрузке профиля');
+            }
         }
     }
 
@@ -537,7 +556,7 @@ ${petsInfo}${boostInfo}
 
 ⏰ **Следующая награда через:** 24 часа
 
-🎯 **Увеличьте доходы:**
+🎯 **Увеличьте ��оходы:**
 • Приобретите питомцев для постоянного бонуса
 • Приглашайте друзей за дополнительные награды`;
 
