@@ -230,6 +230,8 @@ class Database {
             console.log('Error updating existing pets:', error.message);
         }
 
+        // Тестовые данные добавляются через insertDefaultData
+
         // Fix withdrawals table schema completely
         try {
             // Check if withdrawals table exists and has correct schema
@@ -283,7 +285,7 @@ class Database {
             { name: '🐶 Щенок', description: 'Верный щенок приносит допол��ительные звёзды за рефералов 1 уровня', base_price: 50, boost_type: 'referral_1', boost_multiplier: 2 },
             { name: '🦅 Орёл', description: 'Гордый орёл увеличивает награды за рефералов 2 уровня', base_price: 150, boost_type: 'referral_2', boost_multiplier: 3 },
             { name: '🐲 Дракон', description: 'Легендарный дракон даёт бонусы за выполнение заданий', base_price: 500, boost_type: 'task', boost_multiplier: 5 },
-            { name: '🦄 Единорог', description: 'Мифический единорог - максимальный буст за клики', base_price: 1000, boost_type: 'click', boost_multiplier: 10 }
+            { name: '🦄 Единорог', description: 'Мифически�� единорог - максимальный буст за клики', base_price: 1000, boost_type: 'click', boost_multiplier: 10 }
         ];
 
         // PRESERVE USER DATA - Only remove default pets if they don't have user ownership
@@ -302,7 +304,7 @@ class Database {
             const defaultCases = [
                 { name: '📦 Стандартный кейс', description: 'Базовые награды для начинающих', min_reward: 2, max_reward: 15 },
                 { name: '💎 Премиум кейс', description: 'Улучшенн��е награды для активных пользователей', min_reward: 10, max_reward: 50 },
-                { name: '👑 Королевский кейс', description: 'Эксклюзивные награды для топ-игроков', min_reward: 25, max_reward: 200 }
+                { name: '👑 Королевский кейс', description: 'Эксклюзивные награды для топ-и��роков', min_reward: 25, max_reward: 200 }
             ];
 
             for (const caseItem of defaultCases) {
@@ -413,6 +415,264 @@ class Database {
                 console.error('Error during rollback:', rollbackError);
             }
             return Promise.reject(error);
+        }
+    }
+
+    // Методы для работы с пользователями
+    getUser(userId) {
+        try {
+            return this.db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+        } catch (error) {
+            console.error('Ошибка получения пользователя:', error);
+            return null;
+        }
+    }
+
+    createUser(userData) {
+        try {
+            const stmt = this.db.prepare(`
+                INSERT INTO users (id, username, first_name, balance, referral_code, level1_referrals, total_earned)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `);
+            return stmt.run(
+                userData.userId,
+                userData.username,
+                userData.username,
+                userData.balance || 0,
+                userData.referralCode,
+                userData.totalReferrals || 0,
+                userData.balance || 0
+            );
+        } catch (error) {
+            console.error('Ошибка создания пользователя:', error);
+            throw error;
+        }
+    }
+
+    updateUserField(userId, field, value) {
+        try {
+            const stmt = this.db.prepare(`UPDATE users SET ${field} = ? WHERE id = ?`);
+            return stmt.run(value, userId);
+        } catch (error) {
+            console.error(`Ошибка обновления поля ${field}:`, error);
+            throw error;
+        }
+    }
+
+    getUserByReferralCode(code) {
+        try {
+            return this.db.prepare('SELECT * FROM users WHERE referral_code = ?').get(code);
+        } catch (error) {
+            console.error('Ошибка поиска по реферальному коду:', error);
+            return null;
+        }
+    }
+
+    // Методы для задач
+    getAllTasks() {
+        try {
+            return this.db.prepare('SELECT * FROM tasks WHERE is_active = 1').all();
+        } catch (error) {
+            console.error('Ошибка получения заданий:', error);
+            return [];
+        }
+    }
+
+    getTask(taskId) {
+        try {
+            return this.db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId);
+        } catch (error) {
+            console.error('Ошибка получения задания:', error);
+            return null;
+        }
+    }
+
+    getUserCompletedTasks(userId) {
+        try {
+            const rows = this.db.prepare('SELECT task_id FROM user_tasks WHERE user_id = ?').all(userId);
+            return rows.map(row => row.task_id);
+        } catch (error) {
+            console.error('Ошибка получения выполненных заданий:', error);
+            return [];
+        }
+    }
+
+    completeUserTask(userId, taskId) {
+        try {
+            const stmt = this.db.prepare('INSERT OR IGNORE INTO user_tasks (user_id, task_id) VALUES (?, ?)');
+            return stmt.run(userId, taskId);
+        } catch (error) {
+            console.error('Ошибка выполнения задания:', error);
+            throw error;
+        }
+    }
+
+    // Методы для питомцев
+    getAllPets() {
+        try {
+            return this.db.prepare('SELECT * FROM pets WHERE is_active = 1').all();
+        } catch (error) {
+            console.error('Ошибка получения питомцев:', error);
+            return [];
+        }
+    }
+
+    getPet(petId) {
+        try {
+            return this.db.prepare('SELECT * FROM pets WHERE id = ?').get(petId);
+        } catch (error) {
+            console.error('Ошибка получения питомца:', error);
+            return null;
+        }
+    }
+
+    getUserPets(userId) {
+        try {
+            return this.db.prepare(`
+                SELECT up.*, p.name, p.description, p.base_price as price
+                FROM user_pets up
+                JOIN pets p ON up.pet_id = p.id
+                WHERE up.user_id = ?
+            `).all(userId);
+        } catch (error) {
+            console.error('Ошибка получения питомцев пользователя:', error);
+            return [];
+        }
+    }
+
+    addUserPet(userId, petId, level = 1) {
+        try {
+            const stmt = this.db.prepare('INSERT INTO user_pets (user_id, pet_id, level) VALUES (?, ?, ?)');
+            return stmt.run(userId, petId, level);
+        } catch (error) {
+            console.error('Ошибка добавления питомца:', error);
+            throw error;
+        }
+    }
+
+    // Методы для кейсов (упрощённая версия)
+    getUserCases(userId) {
+        try {
+            // Возвращаем пустой массив, так как у нас нет таблицы user_cases
+            return [];
+        } catch (error) {
+            console.error('Ошибка получения кейсов:', error);
+            return [];
+        }
+    }
+
+    saveUserCase(userId, caseType, timestamp) {
+        try {
+            // Заглушка для сохранения информации о кейсах
+            console.log(`Пользователь ${userId} открыл кейс ${caseType} в ${timestamp}`);
+        } catch (error) {
+            console.error('Ошибка сохранения кейса:', error);
+        }
+    }
+
+    // Методы для рейтингов
+    getTopUsersByReferrals(limit = 10) {
+        try {
+            return this.db.prepare(`
+                SELECT username, level1_referrals as totalReferrals
+                FROM users
+                ORDER BY level1_referrals DESC
+                LIMIT ?
+            `).all(limit);
+        } catch (error) {
+            console.error('Ошибка получения топа:', error);
+            return [];
+        }
+    }
+
+    // Методы для лотерей (заглушки)
+    getActiveLotteries() {
+        return []; // Заглушка
+    }
+
+    getLottery(lotteryId) {
+        return null; // Заглушка
+    }
+
+    getLotteryTicketCount(lotteryId) {
+        return 0; // Заглушка
+    }
+
+    addLotteryTicket(userId, lotteryId) {
+        console.log(`Добавлен билет лотереи ${lotteryId} для пользователя ${userId}`);
+    }
+
+    // Методы для промокодов (заглушки)
+    getPromoCode(code) {
+        return null; // Заглушка
+    }
+
+    getUserUsedPromoCodes(userId) {
+        return []; // Заглушка
+    }
+
+    getPromoCodeUsageCount(promoId) {
+        return 0; // Заглушка
+    }
+
+    markPromoCodeAsUsed(userId, promoId) {
+        console.log(`Промокод ${promoId} использован пользователем ${userId}`);
+    }
+
+    // Методы для вывода средств
+    createWithdrawal(userId, amount) {
+        try {
+            const stmt = this.db.prepare(`
+                INSERT INTO withdrawals (user_id, amount, status)
+                VALUES (?, ?, 'pending')
+            `);
+            const result = stmt.run(userId, amount);
+            return result.lastInsertRowid;
+        } catch (error) {
+            console.error('Ошибка создания заявки на вывод:', error);
+            throw error;
+        }
+    }
+
+    // Методы для админ-статистики
+    getUserCount() {
+        try {
+            const result = this.db.prepare('SELECT COUNT(*) as count FROM users').get();
+            return result.count;
+        } catch (error) {
+            console.error('Ошибка подсчёта пользов��телей:', error);
+            return 0;
+        }
+    }
+
+    getTotalBalance() {
+        try {
+            const result = this.db.prepare('SELECT SUM(balance) as total FROM users').get();
+            return result.total || 0;
+        } catch (error) {
+            console.error('Ошибка подсчёта общего баланса:', error);
+            return 0;
+        }
+    }
+
+    getTotalReferrals() {
+        try {
+            const result = this.db.prepare('SELECT SUM(level1_referrals) as total FROM users').get();
+            return result.total || 0;
+        } catch (error) {
+            console.error('Ошибка подсчёта рефералов:', error);
+            return 0;
+        }
+    }
+
+    getTodayRegistrations() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const result = this.db.prepare('SELECT COUNT(*) as count FROM users WHERE DATE(registration_date) = ?').get(today);
+            return result.count;
+        } catch (error) {
+            console.error('Ошибка подсчёта регистраций за сегодня:', error);
+            return 0;
         }
     }
 

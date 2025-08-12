@@ -24,6 +24,17 @@ const bot = new TelegramBot(BOT_TOKEN, {
 // Создаём базу данных
 const db = new Database();
 
+// Инициализируем базу данных
+db.init().then(() => {
+    console.log('✅ База данных инициализирована');
+}).catch(error => {
+    console.error('❌ Ошибка инициализации базы данных:', error);
+    process.exit(1);
+});
+
+// Список администраторов (добавьте ваш ID)
+const ADMIN_IDS = [6910097562]; // Замените на ваш ID
+
 // Простое логирование
 function log(message, data = null) {
     const timestamp = new Date().toISOString();
@@ -57,6 +68,9 @@ function getMainMenu() {
             ],
             [
                 { text: '💰 Вывод', callback_data: 'withdrawal' }
+            ],
+            [
+                { text: '⚙️ Админ-панель', callback_data: 'admin_panel' }
             ]
         ]
     };
@@ -64,7 +78,7 @@ function getMainMenu() {
 
 // Регистрация пользователя
 function registerUser(userId, username, referredBy = null) {
-    log(`Регистрация пользователя ${userId}`);
+    log(`Регистрация поль��ователя ${userId}`);
     
     try {
         // Проверяем существование пользователя
@@ -104,7 +118,7 @@ function registerUser(userId, username, referredBy = null) {
 
 // Обработка реферальной награды
 function processReferralReward(referrerCode, newUserId) {
-    log(`Обработка реферала: код ${referrerCode}, новый пользователь ${newUserId}`);
+    log(`Об��аботка реферала: код ${referrerCode}, новый пользователь ${newUserId}`);
     
     try {
         // Ищем пользователя по реферальному коду
@@ -235,7 +249,7 @@ async function showTasks(chatId, userId) {
         allTasks.forEach(task => {
             const isCompleted = completedTaskIds.includes(task.id);
             const status = isCompleted ? '✅' : '⭐';
-            tasksText += `${status} ${task.title}\n💰 Награда: ${task.reward} ⭐\n📝 ${task.description}\n\n`;
+            tasksText += `${status} ${task.title}\n�� Награда: ${task.reward} ⭐\n📝 ${task.description}\n\n`;
         });
 
         const keyboard = {
@@ -401,7 +415,7 @@ async function openCase(chatId, userId, caseType) {
             const newBalance = user.balance + reward;
             db.updateUserField(userId, 'balance', newBalance);
             
-            // Сохраняем информацию об открытии кейса
+            // С��храняем информацию об открытии кейса
             db.saveUserCase(userId, 'daily', Date.now());
 
             log(`Пользователь ${userId} открыл ежедневный кейс и получил ${reward} звезд`);
@@ -500,7 +514,7 @@ async function buyPet(chatId, userId, petId) {
         const existingPet = userPets.find(up => up.petId === petId);
         
         if (existingPet) {
-            await bot.sendMessage(chatId, '❌ У вас уже есть этот питомец! Вы можете его улучшить.');
+            await bot.sendMessage(chatId, '❌ У вас уже есть этот питомец! Вы може��е его улучшить.');
             return;
         }
 
@@ -710,6 +724,81 @@ async function usePromoCode(chatId, userId, promoCode) {
     }
 }
 
+// Проверка на администратора
+function isAdmin(userId) {
+    return ADMIN_IDS.includes(userId);
+}
+
+// Админ-панель
+async function showAdminPanel(chatId, userId) {
+    if (!isAdmin(userId)) {
+        await bot.sendMessage(chatId, '❌ У вас нет ��оступа к админ-панели');
+        return;
+    }
+
+    const adminText = `⚙️ **Админ-панель**
+
+Выберите действие:`;
+
+    const adminKeyboard = {
+        inline_keyboard: [
+            [
+                { text: '👥 Пользователи', callback_data: 'admin_users' },
+                { text: '📋 Задания', callback_data: 'admin_tasks' }
+            ],
+            [
+                { text: '🐕 Питомцы', callback_data: 'admin_pets' },
+                { text: '🎰 Лотереи', callback_data: 'admin_lotteries' }
+            ],
+            [
+                { text: '💎 Промокоды', callback_data: 'admin_promo' },
+                { text: '💰 Выводы', callback_data: 'admin_withdrawals' }
+            ],
+            [
+                { text: '📤 Рассылка', callback_data: 'admin_broadcast' },
+                { text: '📊 Статистика', callback_data: 'admin_stats' }
+            ],
+            [
+                { text: '🔙 Назад', callback_data: 'main_menu' }
+            ]
+        ]
+    };
+
+    await bot.sendMessage(chatId, adminText, {
+        parse_mode: 'Markdown',
+        reply_markup: adminKeyboard
+    });
+}
+
+// Админ: показать статистику
+async function showAdminStats(chatId, userId) {
+    if (!isAdmin(userId)) return;
+
+    try {
+        const totalUsers = db.getUserCount();
+        const totalBalance = db.getTotalBalance();
+        const totalReferrals = db.getTotalReferrals();
+        const todayRegistrations = db.getTodayRegistrations();
+
+        const statsText = `📊 **Статистика бота**
+
+👥 Всего пользователей: ${totalUsers}
+💰 Общий баланс: ${totalBalance} ⭐
+👥 Всего рефералов: ${totalReferrals}
+📅 Регистраций сегодня: ${todayRegistrations}`;
+
+        await bot.sendMessage(chatId, statsText, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [[{ text: '🔙 Назад', callback_data: 'admin_panel' }]]
+            }
+        });
+    } catch (error) {
+        log(`Ошибка показа статистики:`, error.message);
+        await bot.sendMessage(chatId, '❌ Ошибка при загрузке статистики');
+    }
+}
+
 // Создать заявку на вывод
 async function createWithdrawal(chatId, userId, amount) {
     log(`Создание заявки на вывод ${amount} звезд пользователем ${userId}`);
@@ -778,7 +867,7 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
         const welcomeText = `🌟 Добро пожаловать в StarKirby Bot!
 
 Здесь вы можете:
-• 👆 Кликать и получать звёзды
+• ��� Кликать и получать звёзды
 • 👥 Приглашать друзей и получать бонусы  
 • 📋 Выполнять задания
 • 🐕 Покупать питомцев
@@ -852,7 +941,7 @@ bot.on('callback_query', async (query) => {
 
             case 'referrals':
                 const user = db.getUser(userId);
-                const referralText = `⭐ **Получить звёзды через рефералов**
+                const referralText = `⭐ **Получить звёзды че��ез рефералов**
 
 🔗 Ваш реферальный код: \`${user.referralCode}\`
 👥 Ваших рефералов: ${user.totalReferrals}
@@ -922,6 +1011,14 @@ https://t.me/StarKirbyBot?start=${user.referralCode}`;
                     parse_mode: 'Markdown',
                     reply_markup: withdrawalKeyboard
                 });
+                break;
+
+            case 'admin_panel':
+                await showAdminPanel(chatId, userId);
+                break;
+
+            case 'admin_stats':
+                await showAdminStats(chatId, userId);
                 break;
 
             default:
