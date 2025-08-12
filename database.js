@@ -230,17 +230,29 @@ class Database {
             console.log('Error updating existing pets:', error.message);
         }
 
-        // Migrate withdrawals table to ensure status column exists
+        // Fix withdrawals table schema completely
         try {
-            const withdrawalsTableInfo = await this.all("PRAGMA table_info(withdrawals)");
-            const hasStatusColumn = withdrawalsTableInfo.some(col => col.name === 'status');
+            // Check if withdrawals table exists and has correct schema
+            const tables = await this.all("SELECT name FROM sqlite_master WHERE type='table' AND name='withdrawals'");
 
-            if (!hasStatusColumn) {
-                await this.run('ALTER TABLE withdrawals ADD COLUMN status TEXT DEFAULT "pending"');
-                console.log('Added status column to withdrawals table');
+            if (tables.length === 0) {
+                console.log('Withdrawals table does not exist, will be created by main schema');
+            } else {
+                const withdrawalsTableInfo = await this.all("PRAGMA table_info(withdrawals)");
+                console.log('Current withdrawals table columns:', withdrawalsTableInfo.map(col => col.name));
+
+                const hasStatusColumn = withdrawalsTableInfo.some(col => col.name === 'status');
+
+                if (!hasStatusColumn) {
+                    console.log('Adding missing status column to withdrawals table...');
+                    await this.run('ALTER TABLE withdrawals ADD COLUMN status TEXT DEFAULT "pending"');
+                    console.log('✅ Added status column to withdrawals table');
+                } else {
+                    console.log('✅ Withdrawals table already has status column');
+                }
             }
         } catch (error) {
-            console.log('Error migrating withdrawals table:', error.message);
+            console.log('❌ Error fixing withdrawals table:', error.message);
         }
 
         // Check and log existing user pets to ensure they're preserved
@@ -274,18 +286,13 @@ class Database {
             { name: '🦄 Единорог', description: 'Мифический единорог - максимальный буст за клики', base_price: 1000, boost_type: 'click', boost_multiplier: 10 }
         ];
 
-        // Check if pets already exist to avoid duplicates
-        const existingPets = await this.get('SELECT COUNT(*) as count FROM pets');
-        if (!existingPets || existingPets.count === 0) {
-            console.log('Inserting default pets...');
-            for (const pet of defaultPets) {
-                await this.run(
-                    'INSERT INTO pets (name, description, base_price, boost_type, boost_multiplier) VALUES (?, ?, ?, ?, ?)',
-                    [pet.name, pet.description, pet.base_price, pet.boost_type, pet.boost_multiplier]
-                );
-            }
-        } else {
-            console.log('Pets already exist, skipping insertion');
+        // REMOVE ALL DEFAULT PETS as requested by user
+        try {
+            console.log('🗑��� Removing all default pets as requested...');
+            const deletedPets = await this.run('DELETE FROM pets');
+            console.log(`✅ Removed ${deletedPets.changes} default pets`);
+        } catch (error) {
+            console.log('Error removing default pets:', error.message);
         }
 
         // Insert default cases only if none exist
@@ -308,23 +315,13 @@ class Database {
             console.log('Cases already exist, skipping insertion');
         }
 
-        // Insert default tasks only if none exist
-        const existingTasks = await this.get('SELECT COUNT(*) as count FROM tasks');
-        if (!existingTasks || existingTasks.count === 0) {
-            console.log('Inserting default tasks...');
-            const defaultTasks = [
-                { type: 'channel', title: 'Подписаться на канал', description: 'Подпишитесь на наш официальный канал', reward: 5, target_link: 'https://t.me/example_channel' },
-                { type: 'bot', title: 'Запустить бота', description: 'Запустите нашего партнёрского бота', reward: 3, target_link: 'https://t.me/example_bot' }
-            ];
-
-            for (const task of defaultTasks) {
-                await this.run(
-                    'INSERT INTO tasks (type, title, description, reward, target_link) VALUES (?, ?, ?, ?, ?)',
-                    [task.type, task.title, task.description, task.reward, task.target_link]
-                );
-            }
-        } else {
-            console.log('Tasks already exist, skipping insertion');
+        // REMOVE ALL DEFAULT TASKS as requested by user
+        try {
+            console.log('🗑️ Removing all default tasks as requested...');
+            const deletedTasks = await this.run('DELETE FROM tasks');
+            console.log(`✅ Removed ${deletedTasks.changes} default tasks`);
+        } catch (error) {
+            console.log('Error removing default tasks:', error.message);
         }
     }
 
