@@ -267,6 +267,7 @@ class WithdrawalController {
 
         } catch (error) {
             console.error('Error sending to admin chat:', error);
+            console.log('Note: Make sure ADMIN_CHAT_ID is set to a valid numeric chat ID, not a username');
         }
     }
 
@@ -331,7 +332,7 @@ class WithdrawalController {
                 `@${withdrawal.username}` : 
                 `[${withdrawal.first_name}](tg://user?id=${withdrawal.user_id})`;
 
-            await SafeMessageHelper.safeEditMessage(this.bot,`✅ Заявка одобрена!
+            await SafeMessageHelper.safeEditMessage(this.bot,`✅ Заявка одо��рена!
 
 🆔 Заявка: #${withdrawalId}
 👤 Пользователь: ${userLink}

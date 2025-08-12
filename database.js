@@ -299,7 +299,7 @@ class Database {
             console.log(`✅ Removed ${deletedPets.changes} default pets`);
 
             // Also clear any pet-related transactions
-            await this.run('DELETE FROM transactions WHERE type = "pet_purchase"');
+            await this.run('DELETE FROM transactions WHERE type = ?', ['pet_purchase']);
             console.log('Cleared pet purchase transactions');
 
         } catch (error) {

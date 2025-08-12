@@ -5,6 +5,7 @@ class UserController {
     constructor(database, bot) {
         this.db = database;
         this.bot = bot;
+        this.processingRewards = new Set(); // Track users currently being processed
     }
 
     // Generate unique referral code
@@ -141,20 +142,33 @@ class UserController {
     // Process referral rewards after mandatory channel subscription
     async processDelayedReferralRewards(newUserId) {
         try {
+            // Check if already processing this user
+            if (this.processingRewards.has(newUserId)) {
+                console.log(`Already processing referral rewards for user ${newUserId}`);
+                return;
+            }
+
+            // Add to processing set
+            this.processingRewards.add(newUserId);
+
             // Get the new user
             const newUser = await this.db.get('SELECT referrer_id FROM users WHERE id = ?', [newUserId]);
 
             if (!newUser || !newUser.referrer_id) {
+                console.log(`No referrer found for user ${newUserId}`);
+                this.processingRewards.delete(newUserId);
                 return; // No referrer, nothing to process
             }
 
             // Check if we already processed rewards for this specific user
             const existingReward = await this.db.get(
-                'SELECT id FROM transactions WHERE user_id = ? AND type = "referral" AND description LIKE ?',
-                [newUser.referrer_id, `%ID: ${newUserId}%`]
+                'SELECT id FROM transactions WHERE user_id = ? AND type = ? AND description LIKE ?',
+                [newUser.referrer_id, 'referral', `%ID: ${newUserId}%`]
             );
 
             if (existingReward) {
+                console.log(`Referral rewards already processed for user ${newUserId}`);
+                this.processingRewards.delete(newUserId);
                 return; // Already processed rewards for this specific new user
             }
 
@@ -274,6 +288,9 @@ class UserController {
 
         } catch (error) {
             console.error('Error processing delayed referral rewards:', error);
+        } finally {
+            // Always remove from processing set
+            this.processingRewards.delete(newUserId);
         }
     }
 
@@ -383,7 +400,7 @@ ${petsInfo}${boostInfo}
 🔗 **Персональная реферальная ссылка:**
 \`https://t.me/kirbystarsfarmbot?start=${user.referral_code}\`
 
-💡 Поделитесь ссылкой с друзьями для получения бонусов!`;
+💡 Поделитесь ссылкой с друзьями для пол��чения бонусов!`;
 
             const keyboard = {
                 inline_keyboard: [
@@ -447,7 +464,7 @@ ${petsInfo}${boostInfo}
                     ? `${hoursLeft}ч ${minutesLeft}м`
                     : `${minutesLeft}м`;
 
-                const alreadyClickedMsg = `⏰ **Ежедневный бонус уже получен**
+                const alreadyClickedMsg = `⏰ **Ежедневный бонус уже по��учен**
 
 Вы уже активировали ежедневную награду сегодня.
 
