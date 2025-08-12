@@ -115,7 +115,7 @@ class SimplePetController {
         } catch (error) {
             this.log('Ошибка при показе питомцев', { error: error.message, userId });
             console.error('Error showing pets:', error);
-            await this.bot.sendMessage(chatId, '❌ Ошибка при загру��ке питомцев. Попробуйте позже.');
+            await this.bot.sendMessage(chatId, '❌ Ошибка при загрузке питомцев. Попробуйте позже.');
         }
     }
 
@@ -130,8 +130,8 @@ class SimplePetController {
                 return;
             }
 
-            // Получаем доступных питомцев
-            const availablePets = await this.db.all('SELECT * FROM pets WHERE is_active = 1 ORDER BY base_price ASC');
+            // Получаем доступных питомцев (убираем is_active для совместимости)
+            const availablePets = await this.db.all('SELECT * FROM pets ORDER BY base_price ASC');
             
             // Получаем уже купленных питомцев
             const ownedPetIds = await this.db.all('SELECT pet_id FROM user_pets WHERE user_id = ?', [userId]);
@@ -181,7 +181,7 @@ class SimplePetController {
             });
 
             keyboard.push([{ text: '🐾 Мои питомцы', callback_data: 'simple_my_pets' }]);
-            keyboard.push([{ text: '🏠 Главн��е меню', callback_data: 'main_menu' }]);
+            keyboard.push([{ text: '🏠 Главное меню', callback_data: 'main_menu' }]);
 
             if (messageId) {
                 await SafeMessageHelper.safeEditMessage(this.bot, message, {
@@ -223,8 +223,8 @@ class SimplePetController {
 
             this.log('Пользователь найден', { userId, balance: user.balance });
 
-            // 2. Получаем данные питомца
-            const pet = await this.db.get('SELECT * FROM pets WHERE id = ? AND is_active = 1', [petId]);
+            // 2. Получаем данные питомца (убираем is_active для совместимости)
+            const pet = await this.db.get('SELECT * FROM pets WHERE id = ?', [petId]);
             if (!pet) {
                 this.log('Питомец не найден', { petId });
                 await this.bot.sendMessage(chatId, '❌ Питомец не найден');
