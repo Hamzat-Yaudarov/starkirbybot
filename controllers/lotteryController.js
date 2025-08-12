@@ -200,17 +200,13 @@ class LotteryController {
                 return;
             }
 
-            // Buy ticket atomically with transaction
+            // Buy ticket operations
             const poolIncrease = lottery.ticket_price * (1 - lottery.bot_commission);
 
-            const ticketOperations = [
-                { type: 'run', query: 'UPDATE users SET balance = balance - ? WHERE id = ?', params: [lottery.ticket_price, userId] },
-                { type: 'run', query: 'INSERT INTO lottery_tickets (lottery_id, user_id) VALUES (?, ?)', params: [lotteryId, userId] },
-                { type: 'run', query: 'UPDATE lotteries SET total_pool = total_pool + ? WHERE id = ?', params: [poolIncrease, lotteryId] },
-                { type: 'run', query: 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', params: [userId, 'lottery', -lottery.ticket_price, `Билет в лотерею: ${lottery.name}`] }
-            ];
-
-            await this.db.transaction(ticketOperations);
+            await this.db.run('UPDATE users SET balance = balance - ? WHERE id = ?', [lottery.ticket_price, userId]);
+            await this.db.run('INSERT INTO lottery_tickets (lottery_id, user_id) VALUES (?, ?)', [lotteryId, userId]);
+            await this.db.run('UPDATE lotteries SET total_pool = total_pool + ? WHERE id = ?', [poolIncrease, lotteryId]);
+            await this.db.run('INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', [userId, 'lottery', -lottery.ticket_price, `Билет в лотерею: ${lottery.name}`]);
 
             // Get updated info
             const participants = await this.db.get(

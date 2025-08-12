@@ -359,39 +359,36 @@ class Database {
     }
 
     // Begin transaction
-    async beginTransaction() {
+    beginTransaction() {
         try {
             this.db.exec('BEGIN TRANSACTION');
-            return Promise.resolve();
         } catch (error) {
-            return Promise.reject(error);
+            throw error;
         }
     }
 
     // Commit transaction
-    async commitTransaction() {
+    commitTransaction() {
         try {
             this.db.exec('COMMIT');
-            return Promise.resolve();
         } catch (error) {
-            return Promise.reject(error);
+            throw error;
         }
     }
 
     // Rollback transaction
-    async rollbackTransaction() {
+    rollbackTransaction() {
         try {
             this.db.exec('ROLLBACK');
-            return Promise.resolve();
         } catch (error) {
-            return Promise.reject(error);
+            throw error;
         }
     }
 
     // Execute multiple operations in a transaction
     async transaction(operations) {
         try {
-            await this.beginTransaction();
+            this.beginTransaction();
 
             const results = [];
             for (const operation of operations) {
@@ -407,11 +404,11 @@ class Database {
                 }
             }
 
-            await this.commitTransaction();
+            this.commitTransaction();
             return Promise.resolve(results);
         } catch (error) {
             try {
-                await this.rollbackTransaction();
+                this.rollbackTransaction();
             } catch (rollbackError) {
                 console.error('Error during rollback:', rollbackError);
             }

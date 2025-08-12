@@ -216,7 +216,7 @@ https://t.me/kirbystarsfarmbot?start=${user.referral_code}
 
             await this.db.run(
                 'UPDATE users SET level1_referrals = ?, level2_referrals = ? WHERE id = ?',
-                [level1Count.count, level2Count.count || 0, userId]
+                [level1Count.count || 0, level2Count.count || 0, userId]
             );
 
         } catch (error) {

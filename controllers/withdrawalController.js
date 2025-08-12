@@ -37,7 +37,7 @@ class WithdrawalController {
 📝 Тип: ${withdrawalInfo.description}
 📅 Дата заявки: ${new Date(pendingWithdrawal.request_date).toLocaleString('ru-RU')}
 
-⏰ Заявка обрабатывается администратором.
+⏰ Заявка обрабатывается админ��стратором.
 Ожидайте уведомления о статусе.`;
 
                 const keyboard = [[
@@ -190,15 +190,12 @@ class WithdrawalController {
                 return;
             }
 
-            // Create withdrawal request atomically with transaction
-            const withdrawalOperations = [
-                { type: 'run', query: 'UPDATE users SET balance = balance - ? WHERE id = ?', params: [withdrawalInfo.amount, userId] },
-                { type: 'run', query: 'INSERT INTO withdrawals (user_id, amount, withdrawal_type, status) VALUES (?, ?, ?, ?)', params: [userId, withdrawalInfo.amount, withdrawalType, 'pending'] },
-                { type: 'run', query: 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', params: [userId, 'withdrawal_request', -withdrawalInfo.amount, `Заявка на вывод: ${withdrawalInfo.description}`] }
-            ];
+            // Create withdrawal request operations
+            await this.db.run('UPDATE users SET balance = balance - ? WHERE id = ?', [withdrawalInfo.amount, userId]);
+            const result = await this.db.run('INSERT INTO withdrawals (user_id, amount, withdrawal_type, status) VALUES (?, ?, ?, ?)', [userId, withdrawalInfo.amount, withdrawalType, 'pending']);
+            await this.db.run('INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', [userId, 'withdrawal_request', -withdrawalInfo.amount, `Заявка на вывод: ${withdrawalInfo.description}`]);
 
-            const withdrawalResults = await this.db.transaction(withdrawalOperations);
-            const withdrawalId = withdrawalResults[1].id;
+            const withdrawalId = result.id;
 
             // Send to admin chat
             await this.sendToAdminChat(withdrawalId, user, withdrawalInfo);
@@ -336,7 +333,7 @@ class WithdrawalController {
             });
 
             // Notify user
-            await this.bot.sendMessage(withdrawal.user_id, `✅ Ваша за��вка на вывод одобрена!
+            await this.bot.sendMessage(withdrawal.user_id, `✅ Ваша заявка на вывод одобрена!
 
 🆔 Номер заявки: #${withdrawalId}
 💰 Сумма: ${withdrawal.amount} ⭐

@@ -127,13 +127,13 @@ class InstanceCoordinator {
         return await this.withLock(lockKey, async () => {
             // Use manual transaction with the Database wrapper class
             try {
-                await this.db.run('BEGIN TRANSACTION');
+                this.db.db.exec('BEGIN TRANSACTION');
                 const result = await transactionFn();
-                await this.db.run('COMMIT');
+                this.db.db.exec('COMMIT');
                 return result;
             } catch (error) {
                 try {
-                    await this.db.run('ROLLBACK');
+                    this.db.db.exec('ROLLBACK');
                 } catch (rollbackError) {
                     console.error('Error during rollback:', rollbackError);
                 }

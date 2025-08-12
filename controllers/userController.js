@@ -62,16 +62,7 @@ class UserController {
                 [userId, username, firstName, referrerId, userReferralCode]
             );
 
-            // Only update referral counts for now, rewards will be processed after mandatory subscriptions
-            if (referrerId) {
-                await this.updateReferralCounts(referrerId);
-
-                // Also update level 2 referrer if exists
-                const referrer = await this.db.get('SELECT referrer_id FROM users WHERE id = ?', [referrerId]);
-                if (referrer && referrer.referrer_id) {
-                    await this.updateReferralCounts(referrer.referrer_id);
-                }
-            }
+            // Referral counts will be updated when rewards are processed in referralController
 
             // Get created user
             const newUser = await this.db.get('SELECT * FROM users WHERE id = ?', [userId]);
@@ -201,13 +192,9 @@ class UserController {
             const baseLevel1Reward = 3;
             const finalLevel1Reward = baseLevel1Reward + level1Boost;
 
-            // Award level 1 referral reward atomically
-            const level1Operations = [
-                { type: 'run', query: 'UPDATE users SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?', params: [finalLevel1Reward, finalLevel1Reward, referrerId] },
-                { type: 'run', query: 'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', params: [referrerId, 'referral', finalLevel1Reward, `Реферал активирован (ID: ${newUserId}) +${level1Boost} буст`] }
-            ];
-
-            await this.db.transaction(level1Operations);
+            // Award level 1 referral reward
+            await this.db.run('UPDATE users SET balance = balance + ?, total_earned = total_earned + ? WHERE id = ?', [finalLevel1Reward, finalLevel1Reward, referrerId]);
+            await this.db.run('INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)', [referrerId, 'referral', finalLevel1Reward, `Реферал активирован (ID: ${newUserId}) +${level1Boost} буст`]);
 
             // Send congratulations message to referrer
             const newUserInfo = await this.db.get('SELECT username, first_name FROM users WHERE id = ?', [newUserId]);
@@ -302,29 +289,6 @@ class UserController {
         }
     }
 
-    // Update referral counts
-    async updateReferralCounts(userId) {
-        try {
-            const level1Count = await this.db.get(
-                'SELECT COUNT(*) as count FROM users WHERE referrer_id = ?',
-                [userId]
-            );
-
-            const level2Count = await this.db.get(
-                `SELECT COUNT(*) as count FROM users u1 
-                 JOIN users u2 ON u1.id = u2.referrer_id 
-                 WHERE u1.referrer_id = ?`,
-                [userId]
-            );
-
-            await this.db.run(
-                'UPDATE users SET level1_referrals = ?, level2_referrals = ? WHERE id = ?',
-                [level1Count.count || 0, level2Count.count || 0, userId]
-            );
-        } catch (error) {
-            console.error('Error updating referral counts:', error);
-        }
-    }
 
     // Show user profile
     async showProfile(chatId, userId, messageId = null) {
@@ -464,7 +428,7 @@ ${petsInfo}${boostInfo}
                     await this.bot.sendMessage(chatId, errorMsg);
                 }
             } else {
-                await this.bot.sendMessage(chatId, '❌ Ошибка при загрузке профиля');
+                await this.bot.sendMessage(chatId, '❌ Ошибка при загрузке пр��филя');
             }
         }
     }
@@ -498,7 +462,7 @@ ${petsInfo}${boostInfo}
 
                 const alreadyClickedMsg = `⏰ **Ежедневный бонус уже по��учен**
 
-Вы уже активировали ежедневную награду сегодня.
+Вы уже активирова��и ежедневную награду сегодня.
 
 ⏳ **Следующий клик через:** ${timeLeftText}
 
