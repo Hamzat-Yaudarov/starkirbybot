@@ -25,8 +25,8 @@ class WithdrawalController {
 
             // Check for pending withdrawals
             const pendingWithdrawal = await this.db.get(
-                'SELECT * FROM withdrawals WHERE user_id = ? AND status = "pending" ORDER BY id DESC LIMIT 1',
-                [userId]
+                'SELECT * FROM withdrawals WHERE user_id = ? AND status = ? ORDER BY id DESC LIMIT 1',
+                [userId, 'pending']
             );
 
             if (pendingWithdrawal) {
@@ -181,8 +181,8 @@ class WithdrawalController {
 
             // Check for pending withdrawals
             const pendingWithdrawal = await this.db.get(
-                'SELECT id FROM withdrawals WHERE user_id = ? AND status = "pending"',
-                [userId]
+                'SELECT id FROM withdrawals WHERE user_id = ? AND status = ?',
+                [userId, 'pending']
             );
 
             if (pendingWithdrawal) {
@@ -198,8 +198,8 @@ class WithdrawalController {
 
             // Create withdrawal request
             const result = await this.db.run(
-                'INSERT INTO withdrawals (user_id, amount, withdrawal_type) VALUES (?, ?, ?)',
-                [userId, withdrawalInfo.amount, withdrawalType]
+                'INSERT INTO withdrawals (user_id, amount, withdrawal_type, status) VALUES (?, ?, ?, ?)',
+                [userId, withdrawalInfo.amount, withdrawalType, 'pending']
             );
 
             const withdrawalId = result.id;
@@ -315,8 +315,8 @@ class WithdrawalController {
 
             // Update withdrawal status
             await this.db.run(
-                'UPDATE withdrawals SET status = "approved", processed_date = CURRENT_TIMESTAMP WHERE id = ?',
-                [withdrawalId]
+                'UPDATE withdrawals SET status = ?, processed_date = CURRENT_TIMESTAMP WHERE id = ?',
+                ['approved', withdrawalId]
             );
 
             // Log transaction
@@ -401,8 +401,8 @@ class WithdrawalController {
 
             // Update withdrawal status
             await this.db.run(
-                'UPDATE withdrawals SET status = "rejected", processed_date = CURRENT_TIMESTAMP, admin_note = ? WHERE id = ?',
-                [reason, withdrawalId]
+                'UPDATE withdrawals SET status = ?, processed_date = CURRENT_TIMESTAMP, admin_note = ? WHERE id = ?',
+                ['rejected', reason, withdrawalId]
             );
 
             // Log transaction
@@ -418,7 +418,7 @@ class WithdrawalController {
 🆔 Номер заявки: #${withdrawalId}
 💰 Сумма: ${withdrawal.amount} ⭐
 📝 Тип: ${withdrawalInfo.description}
-📝 Причина: ${reason}
+📝 Причи��а: ${reason}
 
 💎 Звёзды возвращены на ваш баланс.
 Вы можете подать новую заявку.`);

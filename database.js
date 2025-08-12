@@ -288,9 +288,20 @@ class Database {
 
         // REMOVE ALL DEFAULT PETS as requested by user
         try {
-            console.log('🗑��� Removing all default pets as requested...');
+            console.log('🗑️ Removing all default pets as requested...');
+
+            // First, delete all user_pets to avoid foreign key constraints
+            const deletedUserPets = await this.run('DELETE FROM user_pets WHERE pet_id IN (SELECT id FROM pets)');
+            console.log(`Removed ${deletedUserPets.changes} user pets`);
+
+            // Then delete all pets
             const deletedPets = await this.run('DELETE FROM pets');
             console.log(`✅ Removed ${deletedPets.changes} default pets`);
+
+            // Also clear any pet-related transactions
+            await this.run('DELETE FROM transactions WHERE type = "pet_purchase"');
+            console.log('Cleared pet purchase transactions');
+
         } catch (error) {
             console.log('Error removing default pets:', error.message);
         }

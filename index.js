@@ -82,10 +82,15 @@ const bot = new TelegramBot(BOT_TOKEN, {
 });
 
 // Handle polling errors gracefully - simplified approach
+let lastConflictTime = 0;
 bot.on('polling_error', (error) => {
     if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
-        console.log('⚠️ Multiple bot instances detected. This is normal on Railway deployment.');
-        console.log('🤖 Bot functionality will continue working despite the conflict warning.');
+        const now = Date.now();
+        // Only log conflict message once every 30 seconds to reduce spam
+        if (now - lastConflictTime > 30000) {
+            console.log('⚠️ Multiple bot instances detected. This is normal on Railway.');
+            lastConflictTime = now;
+        }
         // Don't restart - let Railway handle instance management
     } else {
         console.error('Polling error:', error.message);
@@ -184,11 +189,11 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 💫 **Платформа для заработка Telegram Stars**
 
 🎯 **Возможност�� заработка:**
-• 👆 Ежедневные клики — стабильный доход
+• 👆 Ежедневные кл��ки — стабильный доход
 • 📋 Выполнение заданий — быстрые награды
 • 👥 Реферальная программа — пассивный доход
 • 🐾 Питомцы — увеличение всех доходов
-• 📦 Кейсы — случайные крупные п��изы
+• 📦 Кейсы — случайные крупные призы
 • 🎰 Лотереи — шанс на джекпот
 
 💎 **Система вывода:**
