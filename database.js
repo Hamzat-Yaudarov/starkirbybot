@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database3 = require('better-sqlite3');
 const path = require('path');
 
 class Database {
@@ -8,22 +8,20 @@ class Database {
 
     async init() {
         const dbPath = path.join(__dirname, 'bot.db');
-        
-        return new Promise((resolve, reject) => {
-            this.db = new sqlite3.Database(dbPath, (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    console.log('Connected to SQLite database');
-                    this.createTables().then(resolve).catch(reject);
-                }
-            });
-        });
+
+        try {
+            this.db = new Database3(dbPath);
+            console.log('Connected to SQLite database with better-sqlite3');
+            await this.createTables();
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
     }
 
     async createTables() {
         // Enable foreign key constraints
-        await this.run('PRAGMA foreign_keys = ON');
+        this.db.pragma('foreign_keys = ON');
         console.log('Foreign key constraints enabled');
 
         const queries = [
@@ -240,7 +238,7 @@ class Database {
             { name: '🐶 Щенок', description: 'Верный щенок приносит дополнительные звёзды за рефералов 1 уровня', base_price: 50, boost_type: 'referral_1', boost_multiplier: 2 },
             { name: '🦅 Орёл', description: 'Гордый орёл увеличивает награды за рефералов 2 уровня', base_price: 150, boost_type: 'referral_2', boost_multiplier: 3 },
             { name: '🐲 Дракон', description: 'Легендарный дракон даёт бонусы за выполнение заданий', base_price: 500, boost_type: 'task', boost_multiplier: 5 },
-            { name: '🦄 Единорог', description: 'Мифический единоро�� - максимальный буст за клики', base_price: 1000, boost_type: 'click', boost_multiplier: 10 }
+            { name: '🦄 Единорог', description: 'Мифический единорог - максимальный буст за клики', base_price: 1000, boost_type: 'click', boost_multiplier: 10 }
         ];
 
         // Check if pets already exist to avoid duplicates
@@ -286,51 +284,45 @@ class Database {
     }
 
     run(query, params = []) {
-        return new Promise((resolve, reject) => {
-            this.db.run(query, params, function(err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve({ id: this.lastID, changes: this.changes });
-                }
+        try {
+            const stmt = this.db.prepare(query);
+            const result = stmt.run(params);
+            return Promise.resolve({
+                id: result.lastInsertRowid,
+                changes: result.changes
             });
-        });
+        } catch (error) {
+            return Promise.reject(error);
+        }
     }
 
     get(query, params = []) {
-        return new Promise((resolve, reject) => {
-            this.db.get(query, params, (err, row) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(row);
-                }
-            });
-        });
+        try {
+            const stmt = this.db.prepare(query);
+            const result = stmt.get(params);
+            return Promise.resolve(result);
+        } catch (error) {
+            return Promise.reject(error);
+        }
     }
 
     all(query, params = []) {
-        return new Promise((resolve, reject) => {
-            this.db.all(query, params, (err, rows) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(rows);
-                }
-            });
-        });
+        try {
+            const stmt = this.db.prepare(query);
+            const result = stmt.all(params);
+            return Promise.resolve(result);
+        } catch (error) {
+            return Promise.reject(error);
+        }
     }
 
     close() {
-        return new Promise((resolve, reject) => {
-            this.db.close((err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        try {
+            this.db.close();
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
     }
 }
 

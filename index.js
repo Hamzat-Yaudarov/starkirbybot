@@ -1,4 +1,8 @@
 require('dotenv').config();
+
+console.log('🚀 Запуск StarKirby Bot...');
+console.log('📁 Рабочая директория:', process.cwd());
+console.log('🔧 Node.js версия:', process.version);
 const TelegramBot = require('node-telegram-bot-api');
 const Database = require('./database');
 const UserController = require('./controllers/userController');
@@ -13,8 +17,23 @@ const RatingController = require('./controllers/ratingController');
 const AdminController = require('./controllers/adminController');
 const WeeklyRewardsController = require('./controllers/weeklyRewardsController');
 
-const BOT_TOKEN = process.env.BOT_TOKEN || '8155190346:AAEjkRihVsGkndNhmBN5ptYnz2GUT6qScnM';
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '@kirbyvivodstars';
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
+// Проверяем наличие обязательных переменных
+if (!BOT_TOKEN) {
+    console.error('❌ BOT_TOKEN не найден в переменных окружения!');
+    console.error('Добавьте BOT_TOKEN в Variables в Railway');
+    process.exit(1);
+}
+
+if (!ADMIN_CHAT_ID) {
+    console.error('❌ ADMIN_CHAT_ID не найден в переменных окружения!');
+    console.error('Добавьте ADMIN_CHAT_ID в Variables в Railway');
+    process.exit(1);
+}
+
+console.log('✅ Переменные окружения загружены успешно');
 
 // Helper function to safely edit or send message
 async function safeEditMessage(bot, text, options) {
@@ -139,7 +158,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
         if (isBanned) {
             await bot.sendMessage(chatId, `🚫 Доступ запрещён
 
-Ваш аккаунт заблокирован за нарушение правил.
+Ваш аккаунт заблокирован за нарушение прав��л.
 Для разблокировки обратитесь к администратор��.`);
             return;
         }
@@ -171,7 +190,7 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
 
 💫 **Платформа для заработка Telegram Stars**
 
-🎯 **Возможност�� заработка:**
+🎯 **Возможн��ст�� заработка:**
 • 👆 Ежедневные клики — стабильный доход
 • 📋 Выполнение заданий — быстрые награды
 • 👥 Реферальная программа — пассивный доход
@@ -303,7 +322,7 @@ bot.on('message', async (msg) => {
                     ]);
                 }
 
-                await bot.sendMessage(chatId, '❓ Команда не распознана. Используйте кнопки меню для навигации.', keyboard);
+                await bot.sendMessage(chatId, '❓ Команда не распознана. Используйте кноп��и меню для навигации.', keyboard);
             }
         } catch (error) {
             console.error('Error handling message:', error);
@@ -458,12 +477,14 @@ bot.on('callback_query', async (callbackQuery) => {
 // Initialize database and start bot
 async function init() {
     try {
+        console.log('🔌 Initializing database...');
         await db.init();
-        console.log('✅ Database initialized');
+        console.log('✅ Database initialized successfully');
         console.log('🤖 Bot started successfully!');
         console.log('📱 Bot username: @kirbystarsfarmbot');
     } catch (error) {
-        console.error('❌ Failed to initialize:', error);
+        console.error('❌ Failed to initialize database:', error.message);
+        console.error('Full error:', error);
         process.exit(1);
     }
 }
