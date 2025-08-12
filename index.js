@@ -5,6 +5,7 @@ console.log('📁 Рабочая директория:', process.cwd());
 console.log('🔧 Node.js версия:', process.version);
 const TelegramBot = require('node-telegram-bot-api');
 const Database = require('./database');
+const SafeMessageHelper = require('./utils/safeMessageHelper');
 const UserController = require('./controllers/userController');
 const TaskController = require('./controllers/taskController');
 const ReferralController = require('./controllers/referralController');
@@ -35,35 +36,6 @@ if (!ADMIN_CHAT_ID) {
 
 console.log('✅ Переменные окружения загружены успешно');
 
-// Helper function to safely edit or send message
-async function safeEditMessage(bot, text, options) {
-    try {
-        if (options.message_id) {
-            await bot.editMessageText(text, options);
-        } else {
-            const { message_id, ...sendOptions } = options;
-            await bot.sendMessage(options.chat_id, text, sendOptions);
-        }
-    } catch (error) {
-        // If edit fails because message is the same, do nothing
-        if (error.message.includes('message is not modified') ||
-            error.message.includes('exactly the same as a current content')) {
-            return;
-        }
-
-        // If edit fails for other reasons, try to send new message
-        if (options.message_id) {
-            try {
-                const { message_id, ...sendOptions } = options;
-                await bot.sendMessage(options.chat_id, text, sendOptions);
-            } catch (sendError) {
-                console.error('Error sending fallback message:', sendError);
-            }
-        } else {
-            console.error('Error sending message:', error);
-        }
-    }
-}
 
 // Helper function to send subscription required message
 async function sendSubscriptionRequiredMessage(chatId, unsubscribedChannels) {
@@ -83,7 +55,7 @@ async function sendSubscriptionRequiredMessage(chatId, unsubscribedChannels) {
         }]);
     });
 
-    message += `\n✅ После подписки нажмите кнопку "Проверить подписку"`;
+    message += `\n✅ После подписки наж��ите кнопку "Проверить подписку"`;
 
     keyboard.push([{
         text: '✅ Проверить подписку',
@@ -98,7 +70,30 @@ async function sendSubscriptionRequiredMessage(chatId, unsubscribedChannels) {
     });
 }
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+// Create bot with improved polling configuration
+const bot = new TelegramBot(BOT_TOKEN, {
+    polling: {
+        interval: 1000,
+        autoStart: false, // Start manually after setup
+        params: {
+            timeout: 30
+        }
+    }
+});
+
+// Handle polling errors gracefully
+bot.on('polling_error', (error) => {
+    if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
+        console.log('Multiple bot instances detected. Stopping this instance...');
+        bot.stopPolling();
+        setTimeout(() => {
+            console.log('Attempting to restart polling...');
+            bot.startPolling();
+        }, 5000);
+    } else {
+        console.error('Polling error:', error.message);
+    }
+});
 const db = new Database();
 
 // Initialize controllers
@@ -371,7 +366,7 @@ bot.on('callback_query', async (callbackQuery) => {
                 ]);
             }
 
-            await bot.editMessageText('🏠 **Главное меню**\n\nВыберите действие:', {
+            await SafeMessageHelper.safeEditMessage(bot, '🏠 **Главное меню**\n\nВыберите действие:', {
                 chat_id: chatId,
                 message_id: msg.message_id,
                 parse_mode: 'Markdown',
@@ -397,7 +392,7 @@ bot.on('callback_query', async (callbackQuery) => {
                             { text: '🔧 Админ-панель', callback_data: 'admin_panel' }
                         ]);
                     }
-                    await bot.editMessageText('✅ **Подписки подтверждены!**\n\nТеперь вы можете пользоваться ботом.', {
+                    await SafeMessageHelper.safeEditMessage(bot, '✅ **Подписки подтверждены!**\n\nТеперь вы можете пользоваться ботом.', {
                         chat_id: chatId,
                         message_id: msg.message_id,
                         parse_mode: 'Markdown',
@@ -460,18 +455,10 @@ bot.on('callback_query', async (callbackQuery) => {
             }
         }
 
-        await bot.answerCallbackQuery(callbackQuery.id);
+        await SafeMessageHelper.safeAnswerCallback(bot, callbackQuery.id);
     } catch (error) {
         console.error('Error handling callback query:', error);
-        try {
-            // Try to answer callback query first to remove loading state
-            await bot.answerCallbackQuery(callbackQuery.id, '❌ Произошла ошибка');
-        } catch (answerError) {
-            // Ignore if callback query is too old
-            if (!answerError.message.includes('query is too old')) {
-                console.error('Error answering callback query:', answerError);
-            }
-        }
+        await SafeMessageHelper.safeAnswerCallback(bot, callbackQuery.id, '❌ Произошла ошибка', true);
     }
 });
 
@@ -481,10 +468,14 @@ async function init() {
         console.log('🔌 Initializing database...');
         await db.init();
         console.log('✅ Database initialized successfully');
+
+        // Start polling after successful initialization
+        console.log('🔄 Starting bot polling...');
+        await bot.startPolling();
         console.log('🤖 Bot started successfully!');
         console.log('📱 Bot username: @kirbystarsfarmbot');
     } catch (error) {
-        console.error('❌ Failed to initialize database:', error.message);
+        console.error('❌ Failed to initialize:', error.message);
         console.error('Full error:', error);
         process.exit(1);
     }

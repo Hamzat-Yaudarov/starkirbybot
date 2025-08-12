@@ -453,7 +453,8 @@ ${this.getTaskInstructions(task.type)}`;
                         // If channel is private or we can't access it, assume completed
                         if (error.message.includes('chat not found') ||
                             error.message.includes('not enough rights') ||
-                            error.message.includes('Forbidden')) {
+                            error.message.includes('Forbidden') ||
+                            error.message.includes('member list is inaccessible')) {
                             console.log('Channel verification failed (private/restricted), assuming completed');
                             return true;
                         }

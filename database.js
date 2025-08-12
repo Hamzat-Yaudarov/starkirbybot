@@ -255,31 +255,43 @@ class Database {
             console.log('Pets already exist, skipping insertion');
         }
 
-        // Insert default cases
-        const defaultCases = [
-            { name: '📦 Стандартный кейс', description: 'Базовые награды для начинающих', min_reward: 2, max_reward: 15 },
-            { name: '💎 Премиум кейс', description: 'Улучшенные награды для активных пользователей', min_reward: 10, max_reward: 50 },
-            { name: '👑 Королевский кейс', description: 'Эксклюзивные награды для топ-игроков', min_reward: 25, max_reward: 200 }
-        ];
+        // Insert default cases only if none exist
+        const existingCases = await this.get('SELECT COUNT(*) as count FROM cases');
+        if (!existingCases || existingCases.count === 0) {
+            console.log('Inserting default cases...');
+            const defaultCases = [
+                { name: '📦 Стандартный кейс', description: 'Базовые награды для начинающих', min_reward: 2, max_reward: 15 },
+                { name: '💎 Премиум кейс', description: 'Улучшенные награды для активных пользователей', min_reward: 10, max_reward: 50 },
+                { name: '👑 Королевский кейс', description: 'Эксклюзивные награды для топ-игроков', min_reward: 25, max_reward: 200 }
+            ];
 
-        for (const caseItem of defaultCases) {
-            await this.run(
-                'INSERT OR IGNORE INTO cases (name, description, min_reward, max_reward) VALUES (?, ?, ?, ?)',
-                [caseItem.name, caseItem.description, caseItem.min_reward, caseItem.max_reward]
-            );
+            for (const caseItem of defaultCases) {
+                await this.run(
+                    'INSERT INTO cases (name, description, min_reward, max_reward) VALUES (?, ?, ?, ?)',
+                    [caseItem.name, caseItem.description, caseItem.min_reward, caseItem.max_reward]
+                );
+            }
+        } else {
+            console.log('Cases already exist, skipping insertion');
         }
 
-        // Insert default tasks
-        const defaultTasks = [
-            { type: 'channel', title: 'Подписаться на канал', description: 'Подпишитесь на наш офи��иальный канал', reward: 5, target_link: 'https://t.me/example_channel' },
-            { type: 'bot', title: 'Запустить бота', description: 'Запустит�� нашего партнёрского бота', reward: 3, target_link: 'https://t.me/example_bot' }
-        ];
+        // Insert default tasks only if none exist
+        const existingTasks = await this.get('SELECT COUNT(*) as count FROM tasks');
+        if (!existingTasks || existingTasks.count === 0) {
+            console.log('Inserting default tasks...');
+            const defaultTasks = [
+                { type: 'channel', title: 'Подписаться на канал', description: 'Подпишитесь на наш официальный канал', reward: 5, target_link: 'https://t.me/example_channel' },
+                { type: 'bot', title: 'Запустить бота', description: 'Запустите нашего партнёрского бота', reward: 3, target_link: 'https://t.me/example_bot' }
+            ];
 
-        for (const task of defaultTasks) {
-            await this.run(
-                'INSERT OR IGNORE INTO tasks (type, title, description, reward, target_link) VALUES (?, ?, ?, ?, ?)',
-                [task.type, task.title, task.description, task.reward, task.target_link]
-            );
+            for (const task of defaultTasks) {
+                await this.run(
+                    'INSERT INTO tasks (type, title, description, reward, target_link) VALUES (?, ?, ?, ?, ?)',
+                    [task.type, task.title, task.description, task.reward, task.target_link]
+                );
+            }
+        } else {
+            console.log('Tasks already exist, skipping insertion');
         }
     }
 
