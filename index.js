@@ -18,12 +18,17 @@ const RatingController = require('./controllers/ratingController');
 const AdminController = require('./controllers/adminController');
 const WeeklyRewardsController = require('./controllers/weeklyRewardsController');
 
+// Новые простые контролле��ы
+const SimpleUserController = require('./controllers/simpleUserController');
+const SimpleReferralController = require('./controllers/simpleReferralController');
+const SimplePetController = require('./controllers/simplePetController');
+
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
 // Проверяем наличие обязательных переменных
 if (!BOT_TOKEN) {
-    console.error('❌ BOT_TOKEN не найден в переменных окружения!');
+    console.error('❌ BOT_TOKEN не найден в переменных окру��ения!');
     console.error('Добавьте BOT_TOKEN в Variables в Railway');
     process.exit(1);
 }
@@ -111,6 +116,11 @@ const ratingController = new RatingController(db, bot);
 const adminController = new AdminController(db, bot);
 const weeklyRewardsController = new WeeklyRewardsController(db, bot);
 
+// Простые контроллеры для тестирования
+const simpleUserController = new SimpleUserController(db, bot);
+const simpleReferralController = new SimpleReferralController(db, bot);
+const simplePetController = new SimplePetController(db, bot);
+
 // Связываем контроллеры
 adminController.setWeeklyRewardsController(weeklyRewardsController);
 
@@ -170,15 +180,15 @@ bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
             }
         }
 
-        // Register or get user
-        const user = await userController.registerUser(userId, username, firstName, referralCode);
+        // Register or get user - ИСПОЛЬЗУЕМ ПРОСТОЙ КОНТРОЛЛЕР
+        const user = await simpleUserController.registerUser(userId, username, firstName, referralCode);
 
-        // If user is new and has a referrer, check if we need to process rewards immediately
+        // If user is new and has a referrer, process rewards immediately
         if (user.isNewUser && user.referrer_id) {
             const unsubscribedChannels = await adminController.checkMandatorySubscriptions(userId);
             if (unsubscribedChannels.length === 0) {
-                // No mandatory channels - process rewards immediately
-                await userController.processDelayedReferralRewards(userId);
+                // No mandatory channels - process rewards immediately with SIMPLE controller
+                await simpleReferralController.processReferralReward(userId, user.referrer_id);
             }
         }
 
@@ -286,7 +296,7 @@ bot.on('message', async (msg) => {
                 const withdrawalId = withdrawalController.pendingRejections[chatId];
                 const success = await withdrawalController.rejectWithdrawal(withdrawalId, msg.text);
                 if (success) {
-                    await bot.sendMessage(chatId, `✅ Заявка #${withdrawalId} отклонена с причиной: ${msg.text}`);
+                    await bot.sendMessage(chatId, `✅ Заявк�� #${withdrawalId} отклонена с причиной: ${msg.text}`);
                 }
                 delete withdrawalController.pendingRejections[chatId];
                 return;
@@ -298,7 +308,7 @@ bot.on('message', async (msg) => {
                 const user = await userController.db.get('SELECT id FROM users WHERE id = ?', [userId]);
                 if (!user) {
                     // User doesn't exist yet, don't process as promo code
-                    await bot.sendMessage(chatId, '🤖 Добро пожаловать! Нажмите /start для начала работы с ботом.');
+                    await bot.sendMessage(chatId, '🤖 Добро пожалов��ть! Нажмите /start для начала работы с ботом.');
                     return;
                 }
 
@@ -357,7 +367,16 @@ bot.on('callback_query', async (callbackQuery) => {
     }, 10000);
 
     try {
-        if (data.startsWith('task_')) {
+        // Простые контроллеры (приоритет)
+        if (data.startsWith('simple_')) {
+            if (data.includes('pet')) {
+                await simplePetController.handleCallback(callbackQuery);
+            } else if (data === 'simple_profile') {
+                await simpleUserController.showProfile(chatId, userId, msg.message_id);
+            } else if (data === 'simple_daily_click') {
+                await simpleUserController.dailyClick(chatId, userId, msg.message_id);
+            }
+        } else if (data.startsWith('task_')) {
             await taskController.handleTaskCallback(callbackQuery);
         } else if (data.startsWith('pet_')) {
             await petController.handlePetCallback(callbackQuery);
@@ -405,7 +424,11 @@ bot.on('callback_query', async (callbackQuery) => {
                     await bot.answerCallbackQuery(callbackQuery.id, '✅ П��дписки проверены!', true);
 
                     // Process delayed referral rewards when user successfully subscribes
-                    await userController.processDelayedReferralRewards(userId);
+                    // Получаем пользователя и обрабатываем награды если есть referrer
+                    const user = await db.get('SELECT referrer_id FROM users WHERE id = ?', [userId]);
+                    if (user && user.referrer_id) {
+                        await simpleReferralController.processReferralReward(userId, user.referrer_id);
+                    }
 
                     // Show main menu
                     let keyboard = getMainMenu();
@@ -437,7 +460,7 @@ bot.on('callback_query', async (callbackQuery) => {
             if (!adminController.isAdmin(userId)) {
                 const unsubscribedChannels = await adminController.checkMandatorySubscriptions(userId);
                 if (unsubscribedChannels.length > 0) {
-                    await bot.answerCallbackQuery(callbackQuery.id, '📢 Необходимо подписаться на каналы', true);
+                    await bot.answerCallbackQuery(callbackQuery.id, '📢 Необходимо подписатьс�� на каналы', true);
                     await sendSubscriptionRequiredMessage(chatId, unsubscribedChannels);
                     return;
                 }
@@ -445,22 +468,26 @@ bot.on('callback_query', async (callbackQuery) => {
 
             switch (menuAction) {
                 case 'profile':
-                    await userController.showProfile(chatId, userId, msg.message_id);
+                    // ИСПОЛЬЗУЕМ ПРОС��ОЙ КОНТРОЛЛЕР
+                    await simpleUserController.showProfile(chatId, userId, msg.message_id);
                     break;
                 case 'click':
-                    await userController.dailyClick(chatId, userId, msg.message_id);
+                    // ИСПОЛЬЗУЕМ ПРОСТОЙ КОНТРОЛЛЕР
+                    await simpleUserController.dailyClick(chatId, userId, msg.message_id);
                     break;
                 case 'tasks':
                     await taskController.showTasks(chatId, userId, msg.message_id);
                     break;
                 case 'referral':
-                    await referralController.showReferralInfo(chatId, userId, msg.message_id);
+                    // ИСПОЛЬЗУЕМ ПРОСТОЙ КОНТРОЛЛЕР
+                    await simpleReferralController.showReferralInfo(chatId, userId, msg.message_id);
                     break;
                 case 'cases':
                     await caseController.showCases(chatId, userId, msg.message_id);
                     break;
                 case 'pets':
-                    await petController.showPets(chatId, userId, msg.message_id);
+                    // ИСПОЛЬЗУЕМ ПРОСТОЙ КОНТРОЛЛЕР
+                    await simplePetController.showPets(chatId, userId, msg.message_id);
                     break;
                 case 'ratings':
                     await ratingController.showRatings(chatId, userId, msg.message_id);
