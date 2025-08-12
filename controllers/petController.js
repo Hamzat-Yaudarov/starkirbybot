@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class PetController {
     constructor(database, bot) {
         this.db = database;
@@ -11,7 +13,7 @@ class PetController {
             if (!user) {
                 const errorMsg = '❌ По��ьзователь не найден';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId
                     });
@@ -49,7 +51,7 @@ class PetController {
                 message += `😔 У вас пока нет питомцев
 
 🎯 Питомцы увеличивают ваш доход от:
-• Ежедневных кликов
+• Ежедневных клико��
 • Наград за задания
 • Других источников дохода
 
@@ -81,7 +83,7 @@ class PetController {
             keyboard.push([{ text: '🏠 Главное меню', callback_data: 'main_menu' }]);
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -100,7 +102,7 @@ class PetController {
             console.error('Error showing pets:', error);
             if (messageId) {
                 try {
-                    await this.bot.editMessageText('❌ Ошибка при загрузке питомцев', {
+                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при загрузке питомцев', {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -142,7 +144,7 @@ class PetController {
                 ];
 
                 if (messageId) {
-                    await this.bot.editMessageText(noPetsMessage, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,noPetsMessage, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -197,7 +199,7 @@ class PetController {
             keyboard.push([{ text: '🔙 Назад к питомцам', callback_data: 'pet_back' }]);
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -216,7 +218,7 @@ class PetController {
             console.error('Error showing pet shop:', error);
             if (messageId) {
                 try {
-                    await this.bot.editMessageText('❌ Ошибка при загрузке магазина', {
+                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при загрузке магазина', {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -258,7 +260,7 @@ class PetController {
                 ]];
 
                 if (messageId) {
-                    await this.bot.editMessageText(noPetsMessage, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,noPetsMessage, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -317,7 +319,7 @@ class PetController {
             keyboard.push([{ text: '🔙 Назад к питомцам', callback_data: 'pet_back' }]);
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot,message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -336,7 +338,7 @@ class PetController {
             console.error('Error showing pet upgrade:', error);
             if (messageId) {
                 try {
-                    await this.bot.editMessageText('❌ Ошибка при загрузке улучшений', {
+                    await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при загрузке улучшений', {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -388,7 +390,7 @@ class PetController {
         } catch (error) {
             console.error('Error handling pet callback:', error);
             try {
-                await this.bot.editMessageText('❌ Ошибка при обработке действия', {
+                await SafeMessageHelper.safeEditMessage(this.bot,'❌ Ошибка при обработке действия', {
                     chat_id: chatId,
                     message_id: msg.message_id,
                     reply_markup: {
@@ -412,7 +414,7 @@ class PetController {
             if (!user || !pet) {
                 const errorMsg = '❌ Пользователь или питомец не найден';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -436,7 +438,7 @@ class PetController {
             if (existingPet) {
                 const errorMsg = '❌ У вас уже есть этот питомец!';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -455,7 +457,7 @@ class PetController {
             if (user.balance < pet.base_price) {
                 const errorMsg = '❌ Недостаточно звёзд для покупки!';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -498,7 +500,7 @@ class PetController {
 ⬆️ Улучшайте питомца, чтобы увеличить буст!`;
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -524,7 +526,7 @@ class PetController {
             const errorMsg = '❌ Ошибка при покупке питомца';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -556,7 +558,7 @@ class PetController {
             if (!user || !userPet) {
                 const errorMsg = '❌ Питомец не найден';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -574,7 +576,7 @@ class PetController {
             if (userPet.level >= userPet.max_level) {
                 const errorMsg = '❌ Питомец уже максимального уровня!';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -594,7 +596,7 @@ class PetController {
             if (user.balance < upgradeCost) {
                 const errorMsg = '❌ Недостаточно звёзд для улучшения!';
                 if (messageId) {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -638,7 +640,7 @@ class PetController {
 ✨ Ваш доход увеличился!`;
 
             if (messageId) {
-                await this.bot.editMessageText(successMsg, {
+                await SafeMessageHelper.safeEditMessage(this.bot,successMsg, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -664,7 +666,7 @@ class PetController {
             const errorMsg = '❌ Ошибка при улучшении питомца';
             if (messageId) {
                 try {
-                    await this.bot.editMessageText(errorMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot,errorMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {

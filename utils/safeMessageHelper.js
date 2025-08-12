@@ -36,7 +36,10 @@ class SafeMessageHelper {
 
     static async safeAnswerCallback(bot, callbackQueryId, text = '', showAlert = false) {
         try {
-            await bot.answerCallbackQuery(callbackQueryId, text, showAlert);
+            await bot.answerCallbackQuery(callbackQueryId, {
+                text: text,
+                show_alert: showAlert
+            });
         } catch (error) {
             if (!error.message.includes('query is too old')) {
                 console.error('Error answering callback query:', error);

@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class WithdrawalController {
     constructor(database, bot, adminChatId) {
         this.db = database;
@@ -43,7 +45,7 @@ class WithdrawalController {
                 ]];
 
                 if (messageId) {
-                    await this.bot.editMessageText(pendingMsg, {
+                    await SafeMessageHelper.safeEditMessage(this.bot, pendingMsg, {
                         chat_id: chatId,
                         message_id: messageId,
                         reply_markup: {
@@ -93,7 +95,7 @@ class WithdrawalController {
 • Заявки обрабатываются администратором
 • Время обработки: до 24 часов
 • При отклонении звёзды возвращаются
-• Можно подать только одну заявку за раз
+• ��ожно подать только одну заявку за раз
 
 💡 Зарабатывайте больше звёзд, чтобы делать выводы!`;
 

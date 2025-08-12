@@ -216,10 +216,43 @@ class Database {
 
         // Update existing pets without boost_type
         try {
-            await this.run('UPDATE pets SET boost_type = "click" WHERE boost_type IS NULL OR boost_type = ""');
-            console.log('Updated existing pets with default boost_type');
+            // First check if the column exists
+            const tableInfo = await this.all("PRAGMA table_info(pets)");
+            const hasBoostType = tableInfo.some(col => col.name === 'boost_type');
+
+            if (hasBoostType) {
+                await this.run('UPDATE pets SET boost_type = ? WHERE boost_type IS NULL OR boost_type = ""', ['click']);
+                console.log('Updated existing pets with default boost_type');
+            } else {
+                console.log('boost_type column does not exist yet');
+            }
         } catch (error) {
             console.log('Error updating existing pets:', error.message);
+        }
+
+        // Migrate withdrawals table to ensure status column exists
+        try {
+            const withdrawalsTableInfo = await this.all("PRAGMA table_info(withdrawals)");
+            const hasStatusColumn = withdrawalsTableInfo.some(col => col.name === 'status');
+
+            if (!hasStatusColumn) {
+                await this.run('ALTER TABLE withdrawals ADD COLUMN status TEXT DEFAULT "pending"');
+                console.log('Added status column to withdrawals table');
+            }
+        } catch (error) {
+            console.log('Error migrating withdrawals table:', error.message);
+        }
+
+        // Check and log existing user pets to ensure they're preserved
+        try {
+            const userPetsCount = await this.get('SELECT COUNT(*) as count FROM user_pets');
+            console.log(`Found ${userPetsCount.count} user pets in database`);
+            if (userPetsCount.count > 0) {
+                const samplePets = await this.all('SELECT user_id, pet_id, level FROM user_pets LIMIT 3');
+                console.log('Sample user pets:', samplePets);
+            }
+        } catch (error) {
+            console.log('Error checking user pets:', error.message);
         }
 
         // No longer clearing existing pets to prevent data loss
@@ -261,7 +294,7 @@ class Database {
             console.log('Inserting default cases...');
             const defaultCases = [
                 { name: '📦 Стандартный кейс', description: 'Базовые награды для начинающих', min_reward: 2, max_reward: 15 },
-                { name: '💎 Премиум кейс', description: 'Улучшенные награды для активных пользователей', min_reward: 10, max_reward: 50 },
+                { name: '💎 Премиум кейс', description: 'Улучшенн��е награды для активных пользователей', min_reward: 10, max_reward: 50 },
                 { name: '👑 Королевский кейс', description: 'Эксклюзивные награды для топ-игроков', min_reward: 25, max_reward: 200 }
             ];
 

@@ -55,7 +55,7 @@ async function sendSubscriptionRequiredMessage(chatId, unsubscribedChannels) {
         }]);
     });
 
-    message += `\n✅ После подписки наж��ите кнопку "Проверить подписку"`;
+    message += `\n✅ После подписки нажмите кнопку "Проверить подписку"`;
 
     keyboard.push([{
         text: '✅ Проверить подписку',
@@ -82,14 +82,24 @@ const bot = new TelegramBot(BOT_TOKEN, {
 });
 
 // Handle polling errors gracefully
+let restartAttempts = 0;
+const maxRestartAttempts = 3;
+
 bot.on('polling_error', (error) => {
     if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
-        console.log('Multiple bot instances detected. Stopping this instance...');
-        bot.stopPolling();
-        setTimeout(() => {
-            console.log('Attempting to restart polling...');
-            bot.startPolling();
-        }, 5000);
+        if (restartAttempts < maxRestartAttempts) {
+            console.log(`Multiple bot instances detected. Stopping this instance... (attempt ${restartAttempts + 1}/${maxRestartAttempts})`);
+            bot.stopPolling();
+            restartAttempts++;
+            setTimeout(() => {
+                console.log('Attempting to restart polling...');
+                bot.startPolling().catch(() => {
+                    console.log('Failed to restart polling, will try again...');
+                });
+            }, 5000 * restartAttempts); // Exponential backoff
+        } else {
+            console.log('Max restart attempts reached. Bot instance will remain stopped to prevent conflicts.');
+        }
     } else {
         console.error('Polling error:', error.message);
     }

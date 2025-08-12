@@ -1,3 +1,5 @@
+const SafeMessageHelper = require('../utils/safeMessageHelper');
+
 class RatingController {
     constructor(database, bot) {
         this.db = database;
@@ -24,7 +26,7 @@ class RatingController {
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot, message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -73,7 +75,7 @@ class RatingController {
                 });
 
                 message += `
-📍 Ваша позиция: ${userPosition.position || 'Не в рейтинге'}`;
+📍 Ваша позици��: ${userPosition.position || 'Не в рейтинге'}`;
                 if (userPosition.referrals > 0) {
                     message += ` (${userPosition.referrals} реф.)`;
                 }
@@ -90,7 +92,7 @@ class RatingController {
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot, message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -155,7 +157,7 @@ class RatingController {
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot, message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
@@ -210,7 +212,7 @@ class RatingController {
             ];
 
             if (messageId) {
-                await this.bot.editMessageText(message, {
+                await SafeMessageHelper.safeEditMessage(this.bot, message, {
                     chat_id: chatId,
                     message_id: messageId,
                     reply_markup: {
