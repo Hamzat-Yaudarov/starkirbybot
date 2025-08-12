@@ -19,10 +19,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "better-sqlite3": "^9.6.0",
     "dotenv": "^16.6.1",
     "node-cron": "^3.0.3",
-    "node-telegram-bot-api": "^0.64.0",
-    "better-sqlite3": "^9.2.2"
+    "node-telegram-bot-api": "^0.64.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
